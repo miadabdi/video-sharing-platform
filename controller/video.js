@@ -141,6 +141,9 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
     req.body.orgVideo = videoDetails;
     req.body.duration = videoDetails.duration;
 
+
+    // TODO: get thumbnail from user
+
     const { filename: thumbnail } = await generateThumbnail(req.file.path);
     req.body.thumbnail = thumbnail;
 
@@ -323,3 +326,25 @@ exports.setVideoToFailed = (videoId) => {
         }
     );
 }
+
+
+exports.addToDislikes = async (videoId, userId) => {
+    const video = await Video.findById(videoId);
+    video.addToDislikes(userId);
+    await video.save();
+};
+exports.addToLikes = async (videoId, userId) => {
+    const video = await Video.findById(videoId);
+    video.addToLikes(userId);
+    await video.save();
+};
+exports.removeFromDislikes = async (videoId, userId) => {
+    const video = await Video.findById(videoId);
+    video.removeFromDislikes(userId);
+    await video.save();
+};
+exports.removeFromLikes = async (videoId, userId) => {
+    const video = await Video.findById(videoId);
+    video.removeFromLikes(userId);
+    await video.save();
+};
