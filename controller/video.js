@@ -16,6 +16,11 @@ const folderPath = process.env.VIDEO_FOLDER;
 const getVideoDetailsInDesiredFormat = async (videoFilePath) => {
     const details = await getVideoDetails(videoFilePath);
 
+    if (details.streams.length < 2) {
+        // there is only one stream which probably there is only video
+        throw new AppError('This video does not contain any audio. Videos should contain audio', 400);
+    }
+
     const frameRate = parseFloat(eval(details.streams[0].avg_frame_rate).toFixed(2));
 
     return {
@@ -141,8 +146,6 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
     if (!(await ownsChannel(req.user, req.body.creator))) {
         return next(new AppError('You don\'n own this channel', 403));
     }
-
-    // FIXME: uploaded video without audio causes error
 
     const videoDetails = await getVideoDetailsInDesiredFormat(req.file.path);
     req.body.orgVideo = videoDetails;
