@@ -6,7 +6,8 @@ const {
     likeVideo,
     dislikeVideo,
     removeDislikeVideo,
-    removeLikedVideo
+    removeLikedVideo,
+    addToWatched
 } = require("../controller/user");
 
 const {
@@ -20,11 +21,12 @@ const router = express.Router();
 
 router.use(protect);
 router.patch("/update-me", avatarUploader.single('avatar'), avatarHandler, updateInfo);
-router.get('/subscribe/:channelId', subscribe);
-router.get('/unsubscribe/:channelId', unsubscribe);
-router.get('/like/:videoId', likeVideo);
-router.get('/dislike/:videoId', dislikeVideo);
-router.get('/removeliked/:videoId', removeLikedVideo);
-router.get('/removedisliked/:videoId', removeDislikeVideo);
+router.post('/subscribe/:channelId', subscribe);
+router.post('/unsubscribe/:channelId', unsubscribe);
+router.post('/like/:videoId', likeVideo);
+router.post('/dislike/:videoId', dislikeVideo);
+router.post('/removeliked/:videoId', removeLikedVideo);
+router.post('/removedisliked/:videoId', removeDislikeVideo);
+router.post('/addtowatched/:videoId', addToWatched);
 
 module.exports = router;

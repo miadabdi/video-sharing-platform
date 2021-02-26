@@ -7,7 +7,8 @@ const {
     addToLikes, 
     removeFromLikes,
     addToDislikes,
-    removeFromDislikes 
+    removeFromDislikes,
+    icreamentView
 } = require('./video');
 
 
@@ -27,7 +28,7 @@ exports.removeDislikeVideo = CatchAsync(async (req, res, next) => {
         });
     }
 
-    res.status(200).json({
+    res.status(400).json({
         status: 'fail',
         message: 'Video is not in disliked videos'
     });
@@ -49,7 +50,7 @@ exports.removeLikedVideo = CatchAsync(async (req, res, next) => {
         });
     }
 
-    res.status(200).json({
+    res.status(400).json({
         status: 'fail',
         message: 'Video is not in liked videos'
     });
@@ -77,7 +78,7 @@ exports.dislikeVideo = CatchAsync(async (req, res, next) => {
         });
     }
 
-    res.status(200).json({
+    res.status(400).json({
         status: 'fail',
         message: 'Video is already in disliked videos'
     });
@@ -104,11 +105,34 @@ exports.likeVideo = CatchAsync(async (req, res, next) => {
         });
     }
 
-    res.status(200).json({
+    res.status(400).json({
         status: 'fail',
         message: 'Video is already added to liked videos'
     });
 });
+
+exports.addToWatched = CatchAsync(async (req, res, next) => {
+    const videoId = req.params.videoId;
+
+    const index = req.user.watched.indexOf(videoId);
+    if (index === -1) {
+        req.user.watched.push(videoId);
+        await req.user.save();
+
+        await icreamentView(videoId);
+
+        return res.status(200).json({
+            status: 'success',
+            message: 'Video added to watched'
+        });
+    }
+
+    res.status(400).json({
+        status: 'fail',
+        message: 'Video is already added to watched'
+    });
+
+})
 
 exports.unsubscribe = CatchAsync(async (req, res, next) => {
     const channelId = req.params.channelId;

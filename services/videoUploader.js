@@ -4,11 +4,11 @@ const AppError = require("../utilities/AppError");
 
 
 const allowedToUpload = ["video"];
-const uploadDirectory = "./public/video";
+const uploadVideoDirectory = "./public/video";
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, uploadDirectory);
+        cb(null, uploadVideoDirectory);
     },
     filename: (req, file, cb) => {
         let ext = path.extname(file.originalname);
@@ -25,7 +25,7 @@ const filter = (req, file, cb) => {
     if (allowedToUpload.includes(file.mimetype.split("/")[0])) {
         cb(null, true);
     } else {
-        cb(new AppError("Only videos are allowed!", 400));
+        cb(new AppError(`Only ${allowedToUpload.join(' and')} are allowed!`, 400));
     }
 };
 

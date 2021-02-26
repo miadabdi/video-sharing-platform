@@ -9,6 +9,7 @@ const generateThumbnail = require('../services/createThumbnail');
 const mime = require('mime-types');
 const { pipeline } = require('stream');
 const { createReadStream } = require('fs');
+const { findByIdAndUpdate } = require('../models/Video');
 
 const folderPath = process.env.VIDEO_FOLDER;
 
@@ -123,9 +124,13 @@ exports.streamVideo = CatchAsync(async (req, res, next) => {
         });
 
     }
-})
+});
 
 exports.createVideo = CatchAsync(async (req, res, next) => {
+    // console.log(req.files);
+    // req.video = req.files['video'] ? req.files['video'][0] : undefined;
+    // req.thumbnail = req.files['thumbnail'] ? req.files['thumbnail'][0] : undefined;
+
     if (!req.file) {
         return next(new AppError('Video is not provided', 400));
     }
@@ -137,6 +142,8 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
         return next(new AppError('You don\'n own this channel', 403));
     }
 
+    // FIXME: uploaded video without audio causes error
+
     const videoDetails = await getVideoDetailsInDesiredFormat(req.file.path);
     req.body.orgVideo = videoDetails;
     req.body.duration = videoDetails.duration;
@@ -144,8 +151,13 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
 
     // TODO: get thumbnail from user
 
+    // if (req.thumbnail) {
+    //     req.body.thumbnail = req.thumbnail.filename;
+    // } else {
+    
     const { filename: thumbnail } = await generateThumbnail(req.file.path);
     req.body.thumbnail = thumbnail;
+    
 
     const video = await Video.create(req.body);
 
@@ -348,3 +360,15 @@ exports.removeFromLikes = async (videoId, userId) => {
     video.removeFromLikes(userId);
     await video.save();
 };
+
+exports.icreamentView = (videoId) => {
+    return Video.findByIdAndUpdate(
+        videoId, 
+        { 
+            $inc: { views: 1 } 
+        }, 
+        {
+            new: 1 
+        }
+    );
+}

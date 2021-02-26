@@ -78,6 +78,10 @@ const UserSchema = new mongoose.Schema({
     dislikedVideos: [{
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'Video'
+    }],
+    watched: [{
+        type: mongoose.SchemaTypes.ObjectId,
+        ref: 'Video'
     }]
 }, {
     timestamps: true,

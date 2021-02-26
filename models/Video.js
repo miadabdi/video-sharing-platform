@@ -80,6 +80,10 @@ const VideoSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Thumbnail is required']
     },
+    views: {
+        type: Number,
+        default: 0
+    },
     availableResolutions: [String],
     orgVideo: VideoRefrensing,
     video360p: VideoRefrensing,
