@@ -316,6 +316,8 @@ exports.setVideoToWaiting = (videoId) => {
 exports.videoTranscodingCompleted = async (videoId, result) => {
     const video = await Video.findById(videoId);
 
+    // FIXME: insert full resolution  1080 => 1920x1080
+
     for (const resolution of Object.keys(result)) {
         const key = `video${resolution}p`;
         const videoPath = result[resolution];

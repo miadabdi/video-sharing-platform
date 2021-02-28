@@ -6,6 +6,8 @@ const CatchAsync = require("../utilities/CatchAsync");
 const AppError = require("../utilities/AppError");
 const Email = require("../services/Email");
 
+// TODO: maybe refresh token?
+
 exports.signToken = (userID) => {
     // signing jwt token
     return jwt.sign({ id: userID }, process.env.JWT_SECRET, {

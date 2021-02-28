@@ -16,6 +16,7 @@ const userRoute = require("./routers/user");
 const authRoute = require("./routers/auth");
 const channelRoute = require("./routers/channel");
 const videoRoute = require("./routers/video");
+const commentRoute = require("./routers/comment");
 
 const app = express();
 
@@ -79,6 +80,7 @@ app.use("/api/auth", authRoute);
 app.use("/api/user", userRoute);
 app.use("/api/channel", channelRoute);
 app.use("/api/video", videoRoute);
+app.use("/api/comment", commentRoute);
 
 // Handling unhandled routes
 app.all("*", (req, res, next) => {
