@@ -5,7 +5,7 @@ const mime = require("mime-types");
 const AppError = require("./AppError");
 
 const allowedToUpload = ["image"];
-const uploadDirectory = "./public/img";
+const uploadDirectory = path.join(__dirname, "../public/img");
 
 module.exports = async(url, userId) => {
     // Testing if the file size is exceeded

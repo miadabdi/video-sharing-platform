@@ -1,18 +1,18 @@
 const multer = require("multer");
-const path = require("path");
+const Path = require("path");
 const AppError = require("../utilities/AppError");
 
 
 const allowedToUpload = ["video"];
-const uploadVideoDirectory = "./public/video";
+const uploadVideoDirectory = Path.join(__dirname, "../storage/videos");
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadVideoDirectory);
     },
     filename: (req, file, cb) => {
-        let ext = path.extname(file.originalname);
-        const fileName = path.basename(file.originalname, ext);
+        let ext = Path.extname(file.originalname);
+        const fileName = Path.basename(file.originalname, ext);
         ext = ext.substr(1);
         cb(
             null,

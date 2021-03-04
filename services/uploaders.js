@@ -1,5 +1,5 @@
 const multer = require("multer");
-const path = require("path");
+const Path = require("path");
 const AppError = require("../utilities/AppError");
 
 
@@ -10,8 +10,8 @@ const storageFatory = (uploadDir) => {
             cb(null, uploadDir);
         },
         filename: (req, file, cb) => {
-            let ext = path.extname(file.originalname);
-            const fileName = path.basename(file.originalname, ext);
+            let ext = Path.extname(file.originalname);
+            const fileName = Path.basename(file.originalname, ext);
             ext = ext.substr(1);
             cb(
                 null,
@@ -38,7 +38,7 @@ exports.thumbnailUploader = multer({
 });
 
 exports.captionUploader = multer({
-    storage: storageFatory('./public/video/captions'),
+    storage: storageFatory(Path.join(__dirname, '../storage/captions')),
     fileFilter: filterFactory(['text', 'application']),
     limits: { fileSize: process.env.MAX_CAPTION_SIZE_UPLOAD * 1024 * 1024 }
 });

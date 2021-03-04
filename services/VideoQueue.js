@@ -41,7 +41,7 @@ function getFilenameAndExt(path) {
     return [filename, ext];
 }
 
-const folderPath = process.env.VIDEO_FOLDER;
+const videoFolder = Path.join(__dirname, '../storage/videos');
 
 function transcodeVideo(job) {
     const videoFilePath = job.data.videoFilePath;
@@ -53,7 +53,7 @@ function transcodeVideo(job) {
         const command = ffmpeg(videoFilePath);
     
         if(resolutionHigherThan(resolution, '1920x1080')){
-            const outputPath = `${folderPath}/${fileName}-1080p.mp4`;
+            const outputPath = `${videoFolder}/${fileName}-1080p.mp4`;
             trancodedResolutions['1080'] = outputPath;
             command    
                 .output(outputPath)
@@ -67,7 +67,7 @@ function transcodeVideo(job) {
         }
 
         if (resolutionHigherThan(resolution, '1280x720')) {
-            const outputPath = `${folderPath}/${fileName}-720p.mp4`;
+            const outputPath = `${videoFolder}/${fileName}-720p.mp4`;
             trancodedResolutions['720'] = outputPath;
             command
                 .output(outputPath)
@@ -81,7 +81,7 @@ function transcodeVideo(job) {
         }
 
         if (resolutionHigherThan(resolution, '960x540')) {
-            const outputPath = `${folderPath}/${fileName}-540p.mp4`;
+            const outputPath = `${videoFolder}/${fileName}-540p.mp4`;
             trancodedResolutions['540'] = outputPath;
             command    
                 .output(outputPath)
@@ -95,7 +95,7 @@ function transcodeVideo(job) {
         }
 
         if (resolutionHigherThan(resolution, '640x360')) {
-            const outputPath = `${folderPath}/${fileName}-360p.mp4`;
+            const outputPath = `${videoFolder}/${fileName}-360p.mp4`;
             trancodedResolutions['360'] = outputPath;
             command
                 .output(outputPath)

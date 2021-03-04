@@ -9,7 +9,7 @@ function getFilenameAndExt(path) {
     return [filename, ext];
 }
 
-const folderPath = process.env.VIDEO_FOLDER;
+const thumbnailFolder = Path.join(__dirname, '../storage/thumbnails');
 
 module.exports = (videoFilePath, videoId) => {
     const [filename, ext] = getFilenameAndExt(videoFilePath);
@@ -23,7 +23,7 @@ module.exports = (videoFilePath, videoId) => {
             })
             .screenshot({
                 filename: `${videoId}-thumbnail.png`,
-                folder: `${folderPath}/thumbnails`,
+                folder: thumbnailFolder,
                 size: '640x360',
                 timestamps: [5] // takes 1 screenshot in second 5
             });

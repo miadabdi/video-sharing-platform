@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 const { unlink } = require('fs');
 const { promisify } = require('util');
 const unlinkPromise = promisify(unlink);
+const Path = require('path');
+
+// ---------------
+const videoFolder = Path.join(__dirname, '../storage/videos');
+// ---------------
 
 const VideoRefrensing = new mongoose.Schema({
     filename: {
@@ -79,6 +84,7 @@ const VideoSchema = new mongoose.Schema({
             default: 'English'
         }
     }],
+    availableCaptions: [String],
     isPublished: {
         type: Boolean,
         default: false
@@ -153,7 +159,7 @@ VideoSchema.method('addToDislikes', function(userId) {
 VideoSchema.method('unlinkOrgVideo', async function() { 
     // deleting original video
     if (this.orgVideo) {
-        const path = `${process.env.VIDEO_FOLDER}/${this.orgVideo.filename}`;
+        const path = `${videoFolder}/${this.orgVideo.filename}`;
         await unlinkPromise(path);
         this.set('orgVideo', undefined);
     }
@@ -164,7 +170,7 @@ VideoSchema.method('unlinkVideos', async function() {
     for (const res of this.availableResolutions) {
         const key = `video${res}p`;
         if (this[key]) {
-            const path = `${process.env.VIDEO_FOLDER}/${this[key].filename}`;
+            const path = `${videoFolder}/${this[key].filename}`;
             await unlinkPromise(path);
             this.set(key, undefined);
         }

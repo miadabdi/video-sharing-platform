@@ -11,7 +11,7 @@ const { pipeline } = require('stream');
 const { createReadStream } = require('fs');
 const sharp = require('sharp');
 
-const folderPath = process.env.VIDEO_FOLDER;
+const videoFolder = Path.join(__dirname, '../storage/videos');
 
 const getVideoDetailsInDesiredFormat = async (videoFilePath) => {
     const details = await getVideoDetails(videoFilePath);
@@ -89,7 +89,7 @@ exports.streamVideo = CatchAsync(async (req, res, next) => {
 
     const key = `video${resolution}p`;
 
-    const path = `${folderPath}/${video[key].filename}`;
+    const path = `${videoFolder}/${video[key].filename}`;
     const fileSize = video[key].fileSize;
     const mimetype = mime.lookup(video[key].filename);
 
@@ -150,7 +150,7 @@ exports.setThumbnail = CatchAsync(async (req, res, next) => {
 
     await sharp(req.file.buffer)
         .resize(640, 360)
-        .toFile(`./public/video/thumbnails/${filename}`);
+        .toFile(Path.join(__dirname, `../storage/thumbnails/${filename}`));
 
     video.thumbnail = filename;
     await video.save();
@@ -273,7 +273,7 @@ exports.startTranscoding = CatchAsync(async (req, res, next) => {
 
     VideoQueue.add(
         {
-            videoFilePath: `${folderPath}/${video.orgVideo.filename}`,
+            videoFilePath: `${videoFolder}/${video.orgVideo.filename}`,
             resolution: video.orgVideo.resolution
         }, 
         { 
@@ -419,6 +419,7 @@ exports.addCaption = CatchAsync(async (req, res, next) => {
         filename: req.file.filename,
         language: req.body.language
     });
+    video.availableCaptions.addToSet(req.body.language);
     await video.save();
 
     res.status(200).json({
