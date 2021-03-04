@@ -163,7 +163,7 @@ exports.protect = CatchAsync(async(req, res, next) => {
     }).select("+passwordChangedAt +password");
     if (!user)
         return next(
-            new AppError("This account was deleted! Please login to another account.")
+            new AppError("This account was deleted! Please login to another account.", 401)
         );
 
     // checks if password is not changed since the token was issued

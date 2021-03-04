@@ -9,7 +9,7 @@ const generateThumbnail = require('../services/createThumbnail');
 const mime = require('mime-types');
 const { pipeline } = require('stream');
 const { createReadStream } = require('fs');
-const { findByIdAndUpdate } = require('../models/Video');
+const sharp = require('sharp');
 
 const folderPath = process.env.VIDEO_FOLDER;
 
@@ -131,11 +131,37 @@ exports.streamVideo = CatchAsync(async (req, res, next) => {
     }
 });
 
-exports.createVideo = CatchAsync(async (req, res, next) => {
-    // console.log(req.files);
-    // req.video = req.files['video'] ? req.files['video'][0] : undefined;
-    // req.thumbnail = req.files['thumbnail'] ? req.files['thumbnail'][0] : undefined;
+exports.setThumbnail = CatchAsync(async (req, res, next) => {
+    if (!req.file) {
+        return next(new AppError('Thumbnail is not provided', 400));
+    }
 
+    const video = await Video.findById(req.params.id);
+
+    if (!video) {
+        return next(new AppError('Video not found', 404));
+    }
+    
+    if (!(await ownsVideo(req.user, undefined, video))) {
+        return next(new AppError('You don\'n own this video', 403));
+    }
+
+    const filename = `${video._id}-thumbnail.jpg`;
+
+    await sharp(req.file.buffer)
+        .resize(640, 360)
+        .toFile(`./public/video/thumbnails/${filename}`);
+
+    video.thumbnail = filename;
+    await video.save();
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Thumbnail changed successfully'
+    });
+});
+
+exports.createVideo = CatchAsync(async (req, res, next) => {
     if (!req.file) {
         return next(new AppError('Video is not provided', 400));
     }
@@ -151,18 +177,15 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
     req.body.orgVideo = videoDetails;
     req.body.duration = videoDetails.duration;
 
+    // FIXME: support for videos with different aspect ratio
 
-    // TODO: get thumbnail from user
-
-    // if (req.thumbnail) {
-    //     req.body.thumbnail = req.thumbnail.filename;
-    // } else {
-    
-    const { filename: thumbnail } = await generateThumbnail(req.file.path);
-    req.body.thumbnail = thumbnail;
-    
-
+    req.body.thumbnail = 'fake'; // This is a fake thumbnail so mongoose won't throw error
     const video = await Video.create(req.body);
+
+    const { filename: thumbnail } = await generateThumbnail(req.file.path, video._id);
+    video.thumbnail = thumbnail;
+    await video.save();
+
 
     res.status(201).json({
         status: 'success',
@@ -377,3 +400,7 @@ exports.icreamentView = (videoId) => {
         }
     );
 }
+
+// TODO: stream captions
+
+// TODO: route to add captions

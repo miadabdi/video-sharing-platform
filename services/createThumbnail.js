@@ -11,7 +11,7 @@ function getFilenameAndExt(path) {
 
 const folderPath = process.env.VIDEO_FOLDER;
 
-module.exports = (videoFilePath) => {
+module.exports = (videoFilePath, videoId) => {
     const [filename, ext] = getFilenameAndExt(videoFilePath);
     return new Promise((resolve, reject) => {
         ffmpeg(videoFilePath)
@@ -22,7 +22,7 @@ module.exports = (videoFilePath) => {
                 reject(err);
             })
             .screenshot({
-                filename: `${filename}-thumbnail.png`,
+                filename: `${videoId}-thumbnail.png`,
                 folder: `${folderPath}/thumbnails`,
                 size: '640x360',
                 timestamps: [5] // takes 1 screenshot in second 5
