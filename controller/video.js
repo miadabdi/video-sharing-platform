@@ -401,6 +401,28 @@ exports.icreamentView = (videoId) => {
     );
 }
 
-// TODO: stream captions
+exports.addCaption = CatchAsync(async (req, res, next) => {
+    if (!req.file) {
+        return next(new AppError('Caption file is not provided', 400));
+    }
 
-// TODO: route to add captions
+    const video = await Video.findById(req.params.id);
+    if (!video) {
+        return next(new AppError('Video not found', 404));
+    }
+
+    if (!(await ownsVideo(req.user, undefined, video))) {
+        return next(new AppError('You don\'n own this video', 403));
+    }
+
+    video.captions.push({
+        filename: req.file.filename,
+        language: req.body.language
+    });
+    await video.save();
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Caption saved successfully'
+    });
+});

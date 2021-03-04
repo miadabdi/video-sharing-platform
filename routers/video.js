@@ -1,7 +1,10 @@
 const express = require('express');
 
 const videoUploader = require('../services/videoUploader');
-const { thumbnailUploader } = require('../services/uploaders');
+const { 
+    thumbnailUploader, 
+    captionUploader 
+} = require('../services/uploaders');
 
 const {
     protect,
@@ -18,7 +21,8 @@ const {
     publish,
     streamVideo,
     deleteVideo,
-    setThumbnail
+    setThumbnail,
+    addCaption
 } = require('../controller/video');
 
 
@@ -31,6 +35,7 @@ router.patch('/:id', updateVideo);
 router.post('/:id/startTranscoding', startTranscoding);
 router.post('/:id/publish', publish);
 router.post('/:id/setThumbnail', thumbnailUploader.single('thumbnail'), setThumbnail);
+router.post('/:id/addCaption', captionUploader.single('caption'), addCaption);
 router.delete('/:id', deleteVideo);
 
 module.exports = router;

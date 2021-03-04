@@ -68,6 +68,17 @@ const VideoSchema = new mongoose.Schema({
         type: String,
         enum: ['English', 'Persian']
     },
+    captions: [{
+        filename: {
+            type: String,
+            required: [true, 'Caption file name is required']
+        },
+        language: {
+            type: String,
+            enum: ['English', 'Persian'],
+            default: 'English'
+        }
+    }],
     isPublished: {
         type: Boolean,
         default: false

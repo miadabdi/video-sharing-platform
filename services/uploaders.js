@@ -36,3 +36,9 @@ exports.thumbnailUploader = multer({
     fileFilter: filterFactory(['image']),
     limits: { fileSize: process.env.MAX_IMAGE_SIZE_UPLOAD * 1024 * 1024 }
 });
+
+exports.captionUploader = multer({
+    storage: storageFatory('./public/video/captions'),
+    fileFilter: filterFactory(['text', 'application']),
+    limits: { fileSize: process.env.MAX_CAPTION_SIZE_UPLOAD * 1024 * 1024 }
+});
