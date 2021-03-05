@@ -1,9 +1,9 @@
 const express = require('express');
 
-const videoUploader = require('../services/videoUploader');
 const { 
     thumbnailUploader, 
-    captionUploader 
+    captionUploader,
+    videoUploader
 } = require('../services/uploaders');
 
 const {
@@ -22,12 +22,16 @@ const {
     streamVideo,
     deleteVideo,
     setThumbnail,
-    addCaption
+    addCaption,
+    getCaption,
+    getThumbnail
 } = require('../controller/video');
 
 
 router.get('/:id', isLoggedIn, getVideo);
 router.get('/stream/:id/:resolution', streamVideo);
+router.get('/caption/:captionFileName', getCaption);
+router.get('/thumbnail/:thumbnailFileName', getThumbnail);
 
 router.use(protect);
 router.post('/', videoUploader.single('video'), createVideo);

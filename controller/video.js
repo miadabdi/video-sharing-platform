@@ -427,3 +427,30 @@ exports.addCaption = CatchAsync(async (req, res, next) => {
         message: 'Caption saved successfully'
     });
 });
+
+
+exports.getCaption = CatchAsync(async (req, res, next) => {
+    res.sendFile(req.params.captionFileName, {
+        root: Path.join(__dirname, '../storage/captions'),
+        acceptRanges: true,
+        dotfiles: "deny",
+        lastModified: false,
+    }, function(err) {
+        if (err) {
+            next(err);
+        }
+    });
+});
+
+exports.getThumbnail = CatchAsync(async (req, res, next) => {
+    res.sendFile(req.params.thumbnailFileName, {
+        root: Path.join(__dirname, '../storage/thumbnails'),
+        acceptRanges: true,
+        dotfiles: "deny",
+        lastModified: false,
+    }, function(err) {
+        if (err) {
+            next(err);
+        }
+    });
+});

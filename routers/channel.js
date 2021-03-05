@@ -1,9 +1,10 @@
 const express = require('express');
 
 const {
-    avatarUploader, 
+    avatarUploader,
     avatarHandler
-} = require('../services/avatarUploader');
+} = require('../services/uploaders');
+
 
 const {
     protect

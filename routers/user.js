@@ -1,4 +1,5 @@
 const express = require("express");
+
 const { 
     updateInfo,
     subscribe,
@@ -11,9 +12,9 @@ const {
 } = require("../controller/user");
 
 const {
-    avatarUploader, 
-    avatarHandler
-} = require('../services/avatarUploader');
+    avatarHandler,
+    avatarUploader
+} = require('../services/uploaders');
 
 const { protect } = require("../controller/auth");
 
