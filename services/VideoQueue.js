@@ -120,7 +120,6 @@ function transcodeVideo(job) {
                 // console.log(+Math.round(progress.percent));
             })
             .on('end', function(stdout, stderr) {
-                console.log('Transcoding succeeded !');
                 resolve(trancodedResolutions);
             })
             .on('error', (err) => {
@@ -144,13 +143,12 @@ videoQueue.on('waiting', async function(jobId){
 });
 
 videoQueue.on('failed', async function(job, err) {
-    console.log(err);
     await setVideoToFailed(job.id);
     job.remove();
 });
 
 videoQueue.on('progress', function(job, progress) {
-    console.log(`PROGRESS: ${progress}`);
+    // console.log(`PROGRESS: ${progress}`);
 });
 
 videoQueue.on('completed', async function(job, result) {

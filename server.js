@@ -2,6 +2,9 @@
 process.on("uncaughtException", (err) => {
     console.log(err.name, err.message);
     console.log("UNHANDLED EXECPTION, SHUTTING DOWN...");
+
+    // always terminate process in uncaughtException. 
+    // The state of program is not suitable to continue running.
     process.exit(1);
 });
 

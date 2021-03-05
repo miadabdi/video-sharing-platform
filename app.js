@@ -44,11 +44,18 @@ app.use(
 // Limiting number of requests to prevent
 // DOS and brute force attacks
 const limiter = rateLimiter({
-    max: process.env.RATE_LIMITER_MAX,
-    windowMs: process.env.RATE_LIMITER_TIME * 60 * 1000,
-    message: `Too many requests from this IP. Please try again in ${process.env.RATE_LIMITER_TIME} minutes`,
+    max: process.env.GENERAL_RATE_LIMITER_MAX,
+    windowMs: process.env.GENERAL_RATE_LIMITER_TIME * 60 * 1000,
+    message: `Too many requests from this IP. Please try again in ${process.env.GENERAL_RATE_LIMITER_TIME} minutes`,
 });
 app.use("/api", limiter);
+
+const limiter = rateLimiter({
+    max: process.env.AUTH_RATE_LIMITER_MAX,
+    windowMs: process.env.AUTH_RATE_LIMITER_TIME * 60 * 1000,
+    message: `Too many requests from this IP for authentication. Please try again in ${process.env.AUTH_RATE_LIMITER_TIME} minutes`,
+});
+app.use("/api/auth", limiter);
 
 // accepting req.body and limiting the incoming data by 10kb of size
 app.use(
