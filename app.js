@@ -6,7 +6,6 @@ const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
 const favicon = require("serve-favicon");
 const hpp = require("hpp");
-const compression = require("compression");
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
@@ -50,12 +49,12 @@ const limiter = rateLimiter({
 });
 app.use("/api", limiter);
 
-const limiter = rateLimiter({
+const limiterAuth = rateLimiter({
     max: process.env.AUTH_RATE_LIMITER_MAX,
     windowMs: process.env.AUTH_RATE_LIMITER_TIME * 60 * 1000,
     message: `Too many requests from this IP for authentication. Please try again in ${process.env.AUTH_RATE_LIMITER_TIME} minutes`,
 });
-app.use("/api/auth", limiter);
+app.use("/api/auth", limiterAuth);
 
 // accepting req.body and limiting the incoming data by 10kb of size
 app.use(
@@ -66,9 +65,6 @@ app.use(
 
 // cors
 app.use(cors());
-
-// compressing json and html
-app.use(compression());
 
 // accepting cookies
 app.use(cookieParser());
