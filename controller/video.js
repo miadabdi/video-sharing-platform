@@ -454,3 +454,5 @@ exports.getThumbnail = CatchAsync(async (req, res, next) => {
         }
     });
 });
+
+// TODO: search functionality

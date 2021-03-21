@@ -10,6 +10,9 @@ const {
 } = require('../controller/video');
 
 
+// TODO: add ffmpeg path
+// TODO: -movflags +faststart
+
 // clearing the redis db in starting ----------------------------
 const videoQueue = new Queue('video transcoding queue', 'redis://127.0.0.1:6379');
 videoQueue.clean(0, 'delayed');

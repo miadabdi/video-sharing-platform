@@ -16,6 +16,7 @@ const authRoute = require("./routers/auth");
 const channelRoute = require("./routers/channel");
 const videoRoute = require("./routers/video");
 const commentRoute = require("./routers/comment");
+const liveRoute = require("./routers/live");
 
 const app = express();
 
@@ -34,11 +35,7 @@ if (process.env.NODE_ENV === "development") {
 }
 
 // setting security HTTP headers
-app.use(
-    helmet({
-        contentSecurityPolicy: false,
-    })
-);
+app.use(helmet());
 
 // Limiting number of requests to prevent
 // DOS and brute force attacks
@@ -56,10 +53,18 @@ const limiterAuth = rateLimiter({
 });
 app.use("/api/auth", limiterAuth);
 
-// accepting req.body and limiting the incoming data by 10kb of size
+// accepting req.body and limiting the incoming data by 100kb of size as json
 app.use(
     express.json({
-        limit: "10kb",
+        limit: "100kb",
+    })
+);
+
+// accepting req.body and limiting the incoming data by 100kb of size as array or strings
+app.use(
+    express.urlencoded({
+        limit: "100kb",
+        extended: true
     })
 );
 
@@ -84,6 +89,7 @@ app.use("/api/user", userRoute);
 app.use("/api/channel", channelRoute);
 app.use("/api/video", videoRoute);
 app.use("/api/comment", commentRoute);
+app.use("/api/live", liveRoute);
 
 // Handling unhandled routes
 app.all("*", (req, res, next) => {
