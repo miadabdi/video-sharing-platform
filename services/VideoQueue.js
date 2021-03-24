@@ -8,10 +8,8 @@ const {
     videoTranscodingCompleted,
     setVideoToFailed
 } = require('../controller/video');
+const Ffmpeg = require('fluent-ffmpeg');
 
-
-// TODO: add ffmpeg path
-// TODO: -movflags +faststart
 
 // clearing the redis db in starting ----------------------------
 const videoQueue = new Queue('video transcoding queue', 'redis://127.0.0.1:6379');
@@ -25,6 +23,10 @@ let multi = videoQueue.multi();
 multi.del(videoQueue.toKey('repeat'));
 multi.exec();
 // ---------------------------------------------------------------
+
+// setting binaries
+Ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
+Ffmpeg.setFfprobePath(process.env.FFPROBE_PATH);
 
 
 
@@ -53,7 +55,9 @@ function transcodeVideo(job) {
     return new Promise((resolve, reject) => {
 
         const trancodedResolutions = {};
-        const command = ffmpeg(videoFilePath);
+        const command = ffmpeg(videoFilePath, {
+            niceness: 19
+        });
     
         if(resolutionHigherThan(resolution, '1920x1080')){
             const outputPath = `${videoFolder}/${fileName}-1080p.mp4`;
@@ -66,7 +70,10 @@ function transcodeVideo(job) {
                 .format('mp4')
                 .size('1920x1080')
                 .videoCodec('libx264')
-                // .outputOptions('-movflags frag_keyframe+empty_moov')
+                .outputOption('-preset medium')
+                .outputOption('-movflags faststart')
+                .outputOption('-profile:v high')
+                .outputOption('-level:v 4.0')
         }
 
         if (resolutionHigherThan(resolution, '1280x720')) {
@@ -80,7 +87,10 @@ function transcodeVideo(job) {
                 .format('mp4')
                 .size('1280x720')
                 .videoCodec('libx264')
-                // .outputOptions('-movflags frag_keyframe+empty_moov')
+                .outputOption('-preset medium')
+                .outputOption('-movflags faststart')
+                .outputOption('-profile:v high')
+                .outputOption('-level:v 4.0')
         }
 
         if (resolutionHigherThan(resolution, '960x540')) {
@@ -94,7 +104,10 @@ function transcodeVideo(job) {
                 .format('mp4')
                 .size('960x540')
                 .videoCodec('libx264')
-                // .outputOptions('-movflags frag_keyframe+empty_moov')
+                .outputOption('-preset medium')
+                .outputOption('-movflags faststart')
+                .outputOption('-profile:v high')
+                .outputOption('-level:v 4.0')
         }
 
         if (resolutionHigherThan(resolution, '640x360')) {
@@ -108,7 +121,10 @@ function transcodeVideo(job) {
                 .format('mp4')
                 .size('640x360')
                 .videoCodec('libx264')
-                // .outputOptions('-movflags frag_keyframe+empty_moov')
+                .outputOption('-preset medium')
+                .outputOption('-movflags faststart')
+                .outputOption('-profile:v high')
+                .outputOption('-level:v 4.0')
         }
         
         command

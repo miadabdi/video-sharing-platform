@@ -65,7 +65,7 @@ exports.createLive = CatchAsync(async (req, res, next) => {
         'name', 'description', 'channel'
     );
 
-    req.body.streamKey = crypto.randomBytes(20).toString('hex');
+    req.body.streamKey = crypto.randomBytes(10).toString('hex');
 
     const thumbnailFilename = `live-${req.user._id}-${req.body.channel}-thumbnail.jpg`;
 
@@ -87,7 +87,6 @@ exports.createLive = CatchAsync(async (req, res, next) => {
 });
 
 exports.publishDone = CatchAsync(async (req, res, next) => {
-    console.log(req.body);
     const streamKey = req.body.name;
 
     const live = await Live.findOne({ streamKey });
@@ -102,3 +101,4 @@ exports.publishDone = CatchAsync(async (req, res, next) => {
     res.status(200).end();
 });
 
+// TODO: delete stream files after stream ended
