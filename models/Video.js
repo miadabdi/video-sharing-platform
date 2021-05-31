@@ -1,35 +1,36 @@
 const mongoose = require('mongoose');
-const { unlink } = require('fs');
+const { rm, existsSync, unlink } = require('fs');
 const { promisify } = require('util');
+const rmPromise = promisify(rm);
 const unlinkPromise = promisify(unlink);
 const Path = require('path');
+const { RFC5646_LANGUAGE_TAGS } = require('../globals');
 
-// ---------------
-const videoFolder = Path.join(__dirname, '../storage/videos');
-// ---------------
 
-const VideoRefrensing = new mongoose.Schema({
+const langCodes = Object.keys(RFC5646_LANGUAGE_TAGS);
+  
+
+const captionSchema = new mongoose.Schema({
     filename: {
         type: String,
-        required: true
+        required: [true, 'caption filename is required']
     },
-    fileSize: Number,
-    frameRate: Number,
-    resolution: String,
-    videoBitrate: String,
-    videoCodec: String,
-    audioBitrate: String,
-    audioCodec: String,
-    audioChannels: Number,
-    duration: Number,
-    overallBitrate: String
+    languageInRFC5646: {
+        type: String,
+        enum: langCodes,
+        required: [true, 'Language code based on RFC 5646 should be passed']
+    }
 });
+
+captionSchema.virtual('language').get(function() {
+    return RFC5646_LANGUAGE_TAGS[this.languageInRFC5646];
+})
 
 const VideoSchema = new mongoose.Schema({
     title: {
         type: String,
         required: [true, 'Title is required'],
-        maxlength: 40
+        maxlength: 100
     },
     description: {
         type: String,
@@ -73,18 +74,6 @@ const VideoSchema = new mongoose.Schema({
         type: String,
         enum: ['English', 'Persian']
     },
-    captions: [{
-        filename: {
-            type: String,
-            required: [true, 'Caption file name is required']
-        },
-        language: {
-            type: String,
-            enum: ['English', 'Persian'],
-            default: 'English'
-        }
-    }],
-    availableCaptions: [String],
     isPublished: {
         type: Boolean,
         default: false
@@ -101,12 +90,9 @@ const VideoSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    availableResolutions: [String],
-    orgVideo: VideoRefrensing,
-    video360p: VideoRefrensing,
-    video540p: VideoRefrensing,
-    video720p: VideoRefrensing,
-    video1080p: VideoRefrensing
+    dedicatedDir: String,
+    captions: [captionSchema],
+    orgVideoFilename: String
 }, {
     timestamps: true,
     id: false
@@ -156,28 +142,43 @@ VideoSchema.method('addToDislikes', function(userId) {
     }
 })
 
+VideoSchema.method('unlinkThumbnail', async function() { 
+    // deleting original video
+
+    const path = Path.join(__dirname, `../storage/thumbnails/${this.thumbnail}`);
+    // FIXME: exists should not be used
+    if (!existsSync(path)) return;
+
+    await unlinkPromise(path);
+    this.set('thumbnail', undefined);
+})
+
 VideoSchema.method('unlinkOrgVideo', async function() { 
     // deleting original video
-    if (this.orgVideo) {
-        const path = `${videoFolder}/${this.orgVideo.filename}`;
-        await unlinkPromise(path);
-        this.set('orgVideo', undefined);
-    }
+
+    const path = Path.join(__dirname, `../storage/videos/${this.orgVideoFilename}`);
+    // FIXME: exists should not be used
+    if (!existsSync(path)) return;
+
+    await unlinkPromise(path);
+    this.set('orgVideoFilename', undefined);
 })
 
 VideoSchema.method('unlinkVideos', async function() { 
     // deleting videos
-    for (const res of this.availableResolutions) {
-        const key = `video${res}p`;
-        if (this[key]) {
-            const path = `${videoFolder}/${this[key].filename}`;
-            await unlinkPromise(path);
-            this.set(key, undefined);
-        }
-    }
+    const path = Path.join(__dirname, `../storage/videos/${this.dedicatedDir}`);
+    // FIXME: exists should not be used
+    if (!existsSync(path)) return;
+
+    await rmPromise(path, 
+        { recursive: true, maxRetries: 5, retryDelay: 100 }
+    );
+    
 })
 
 
 const Video = mongoose.model('Video', VideoSchema);
 
 module.exports = Video;
+
+

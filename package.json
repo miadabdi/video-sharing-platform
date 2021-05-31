@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@michaeljones2001/m3u8-parser": "^5.4.1",
     "axios": "^0.21.1",
     "bcryptjs": "^2.4.3",
     "bull": "^3.21.1",
@@ -33,6 +34,7 @@
     "redis": "^3.0.2",
     "serve-favicon": "^2.5.0",
     "sharp": "^0.27.2",
+    "slugify": "^1.5.1",
     "validator": "^13.5.2",
     "xss-clean": "^0.1.1"
   },

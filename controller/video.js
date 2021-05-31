@@ -1,3 +1,4 @@
+const { promisify } = require('util');
 const Path = require('path');
 const CatchAsync = require('../utilities/CatchAsync');
 const AppError = require('../utilities/AppError');
@@ -7,10 +8,16 @@ const Video = require('../models/Video');
 const getVideoDetails = require('../utilities/getVideoDetails');
 const generateThumbnail = require('../services/createThumbnail');
 const mime = require('mime-types');
-const { pipeline } = require('stream');
-const { createReadStream } = require('fs');
+const { mkdir } = require('fs');
 const sharp = require('sharp');
+const fs = require('fs')
+const slugify = require('slugify');
+const getFilenameAndExt = require('../utilities/splitFilenameAndExt');
+const { RFC5646_LANGUAGE_TAGS } = require('../globals');
+const m3u8Parser = require('@michaeljones2001/m3u8-parser');
 
+
+const mkdirPromise = promisify(mkdir);
 const videoFolder = Path.join(__dirname, '../storage/videos');
 
 const getVideoDetailsInDesiredFormat = async (videoFilePath) => {
@@ -24,17 +31,9 @@ const getVideoDetailsInDesiredFormat = async (videoFilePath) => {
     const frameRate = parseFloat(eval(details.streams[0].avg_frame_rate).toFixed(2));
 
     return {
-        filename: Path.basename(videoFilePath),
         fileSize: details.format.size,
         frameRate,
-        resolution: `${details.streams[0].width}x${details.streams[0].height}`,
-        videoBitrate: details.streams[0].bit_rate,
-        videoCodec: details.streams[0].codec_name,
-        audioBitrate: details.streams[1].bit_rate,
-        audioCodec: details.streams[1].codec_name,
-        audioChannels: details.streams[1].channels,
         duration: details.format.duration,
-        overallBitrate: details.format.bit_rate
     }
 }
 
@@ -67,69 +66,20 @@ exports.getVideo = CatchAsync(async (req, res, next) => {
     })
 })
 
-exports.streamVideo = CatchAsync(async (req, res, next) => {
-    const videoId = req.params.id;
-    const resolution = req.params.resolution;
-    const range = req.headers.range
+// exports.getMasterFile = CatchAsync(async (req, res, next) => {
+//     const video = await Video.findById(videoId);
 
-    const video = await Video.findById(videoId);
+//     if (!video || video.isDeleted) {
+//         return next(new AppError('Video not found', 404));
+//     }
 
-    if (!video || video.isDeleted) {
-        return next(new AppError('Video not found', 404));
-    }
+//     if (!video.isPublished) {
+//         return next(new AppError('Video is not published yet', 403));
+//     }
 
-    if (!video.isPublished) {
-        return next(new AppError('Video is not published yet', 403));
-    }
-
-    if (!video.availableResolutions.includes(resolution)) {
-        return next(new AppError(`${resolution} is not available. Available resolutions are ${video.availableResolutions.join(', ')}`, 400));
-    }
-
-
-    const key = `video${resolution}p`;
-
-    const path = `${videoFolder}/${video[key].filename}`;
-    const fileSize = video[key].fileSize;
-    const mimetype = mime.lookup(video[key].filename);
-
-    if (range) {
-
-        const parts = range.replace(/bytes=/, "").split("-");
-        const start = parseInt(parts[0], 10);
-        const end = parts[1] 
-        ? parseInt(parts[1], 10)
-        : fileSize-1;
-
-        const chunksize = (end-start)+1;
-        const file = createReadStream(path, {start, end});
-        const head = {
-            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-            'Accept-Ranges': 'bytes',
-            'Content-Length': chunksize,
-            'Content-Type': mimetype,
-        }
-
-        res.writeHead(206, head);
-        pipeline(file, res, (err) => {
-            // console.log(err);
-        });
-
-    } else {
-
-        const head = {
-            'Content-Length': fileSize,
-            'Content-Type': mimetype,
-            'Accept-Ranges': 'bytes',
-        };
-
-        res.writeHead(200, head);
-        pipeline(createReadStream(path), res, (err) => {
-            // console.log(err);
-        });
-
-    }
-});
+//     const masterPath = Path.join(__dirname, `../storage/videos/${video.dedicatedDir}/master.m3u8`);
+//     res.sendFile(masterPath);
+// });
 
 exports.setThumbnail = CatchAsync(async (req, res, next) => {
     if (!req.file) {
@@ -146,7 +96,7 @@ exports.setThumbnail = CatchAsync(async (req, res, next) => {
         return next(new AppError('You don\'n own this video', 403));
     }
 
-    const filename = `${video._id}-thumbnail.jpg`;
+    const filename = `${video._id}-${Date.now()}-thumbnail.jpg`;
 
     await sharp(req.file.buffer)
         .resize(640, 360)
@@ -174,10 +124,20 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
     }
 
     const videoDetails = await getVideoDetailsInDesiredFormat(req.file.path);
-    req.body.orgVideo = videoDetails;
     req.body.duration = videoDetails.duration;
+    req.body.orgVideoFilename = req.file.filename;
 
-    // FIXME: support for videos with different aspect ratio
+    // the slugified version of the video filename will be the folder name
+    req.body.dedicatedDir = slugify(getFilenameAndExt(req.file.filename)[0]);
+    const dedicatedDirPath = Path.join(__dirname, `../storage/videos/${req.body.dedicatedDir}`);
+    try {
+        await mkdirPromise(dedicatedDirPath);
+    } catch(e) {
+        // ignoring error EEXIST as it indecates the folder exists
+        if (!e.code === 'EEXIST') {
+            throw e;
+        }
+    }
 
     req.body.thumbnail = 'fake'; // This is a fake thumbnail so mongoose won't throw error
     const video = await Video.create(req.body);
@@ -185,6 +145,9 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
     const { filename: thumbnail } = await generateThumbnail(req.file.path, video._id);
     video.thumbnail = thumbnail;
     await video.save();
+
+    // add video to videos of channel
+    await pushVideo(req.body.creator, video._id);
 
 
     res.status(201).json({
@@ -269,12 +232,13 @@ exports.startTranscoding = CatchAsync(async (req, res, next) => {
         return next(new AppError(`Video status should be Ready for processing. but the current status is ${video.status}`, 400));
     }
 
+    // importing video queue here for avoiding cycling dependency
     const VideoQueue = require('../services/VideoQueue');
 
     VideoQueue.add(
         {
-            videoFilePath: `${videoFolder}/${video.orgVideo.filename}`,
-            resolution: video.orgVideo.resolution
+            videoFilename: video.orgVideoFilename,
+            dedicatedDir: video.dedicatedDir
         }, 
         { 
             jobId: video._id 
@@ -339,18 +303,10 @@ exports.setVideoToWaiting = (videoId) => {
 exports.videoTranscodingCompleted = async (videoId, result) => {
     const video = await Video.findById(videoId);
 
-    // FIXME: insert full resolution  1080 => 1920x1080
-
-    for (const resolution of Object.keys(result)) {
-        const key = `video${resolution}p`;
-        const videoPath = result[resolution];
-        video[key] = await getVideoDetailsInDesiredFormat(videoPath);
-    }
-
+    await video.unlinkThumbnail();
     await video.unlinkOrgVideo();
 
     video.status = 'Ready to publish';
-    video.availableResolutions = Object.keys(result);
 
     await video.save();
 }
@@ -407,7 +363,7 @@ exports.addCaption = CatchAsync(async (req, res, next) => {
     }
 
     const video = await Video.findById(req.params.id);
-    if (!video) {
+    if (!video || video.isDeleted) {
         return next(new AppError('Video not found', 404));
     }
 
@@ -415,44 +371,97 @@ exports.addCaption = CatchAsync(async (req, res, next) => {
         return next(new AppError('You don\'n own this video', 403));
     }
 
-    video.captions.push({
+    const caption = video.captions.create({
         filename: req.file.filename,
-        language: req.body.language
+        languageInRFC5646: req.body.languageInRFC5646
     });
-    video.availableCaptions.addToSet(req.body.language);
+
+    video.captions.push(caption);
+
     await video.save();
+    
+    // importing caption queue here for avoiding cycling dependency
+    const CaptionQueue = require('../services/CaptionQueue');
+
+    CaptionQueue.add(
+        {
+            subtitleFilename: caption.filename,
+            dedicatedDir: video.dedicatedDir,
+            sub_code: caption.languageInRFC5646,
+            sub_name: RFC5646_LANGUAGE_TAGS[caption.languageInRFC5646]
+        },
+        {
+            jobId: video._id
+        }
+    );
 
     res.status(200).json({
         status: 'success',
-        message: 'Caption saved successfully'
+        message: 'Caption saved successfully and soon will be processed'
     });
 });
 
-
-exports.getCaption = CatchAsync(async (req, res, next) => {
-    res.sendFile(req.params.captionFileName, {
-        root: Path.join(__dirname, '../storage/captions'),
-        acceptRanges: true,
-        dotfiles: "deny",
-        lastModified: false,
-    }, function(err) {
+exports.captionTranscodingCompleted = async (jobId, result) => {
+    // #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subtitles0",NAME="eng_subtitle",DEFAULT=NO,AUTOSELECT=YES,LANGUAGE="eng",URI="subtitle_eng_rendition.m3u8"
+    // FIXME: convert to async/await
+    
+    fs.readFile(result.masterPath, 'utf8' , (err, data) => {
         if (err) {
-            next(err);
+            console.error(`Error in opening master file: ${err}`);
+            return err;
         }
-    });
-});
+        
+        // loading m3u8 master to parser
+        const parser = new m3u8Parser.Parser();
+        parser.push(data);
+        parser.end();
+        
+        // group name subtitle0 is hardcoded. changing this may cause errors
+        const subtitles0 = parser.manifest.mediaGroups.SUBTITLES.subtitles0 || {};
+        subtitles0[result.sub_name] = {
+            default: false,
+            autoselect: false,
+            forced: false,
+            language: result.sub_code,
+            uri: result.captionM3u8Filename
+        };
 
-exports.getThumbnail = CatchAsync(async (req, res, next) => {
-    res.sendFile(req.params.thumbnailFileName, {
-        root: Path.join(__dirname, '../storage/thumbnails'),
-        acceptRanges: true,
-        dotfiles: "deny",
-        lastModified: false,
-    }, function(err) {
-        if (err) {
-            next(err);
-        }
-    });
-});
+        parser.manifest.mediaGroups.SUBTITLES.subtitles0 = subtitles0;
+
+        parser.manifest.playlists = parser.manifest.playlists.map((playlist) => {
+            playlist.attributes.SUBTITLES = "subtitles0";
+            return playlist;
+        })
+
+        fs.writeFile(result.masterPath, parser.stringify(), { encoding: 'utf8' } , (err) => {
+            if (err) {
+                console.error(`Error in writing master file: ${err}`);
+                return err;
+            }
+        })
+    })     
+
+    // removing redundant files
+    const path = result.dedicatedDirPath;
+    const regex = /^redundant.*$/;
+    const files = await fs.promises.readdir(path);
+    files
+        .filter(f => regex.test(f))
+        .map(async (f) => { await fs.promises.unlink(Path.join(path, f)) })
+}
+
+
+// exports.getThumbnail = CatchAsync(async (req, res, next) => {
+//     res.sendFile(req.params.thumbnailFileName, {
+//         root: Path.join(__dirname, '../storage/thumbnails'),
+//         acceptRanges: true,
+//         dotfiles: "deny",
+//         lastModified: false,
+//     }, function(err) {
+//         if (err) {
+//             next(err);
+//         }
+//     });
+// });
 
 // TODO: search functionality

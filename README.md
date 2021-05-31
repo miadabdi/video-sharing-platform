@@ -11,8 +11,8 @@ Use git to clone the project
 ## Usage
 
 ```bash
-# npm install
-# npm start
+npm install
+npm start
 ```
 ## Details
 

@@ -19,19 +19,13 @@ const {
     getVideo,
     startTranscoding,
     publish,
-    streamVideo,
     deleteVideo,
     setThumbnail,
     addCaption,
-    getCaption,
-    getThumbnail
 } = require('../controller/video');
 
 
 router.get('/:id', isLoggedIn, getVideo);
-router.get('/stream/:id/:resolution', streamVideo);
-router.get('/caption/:captionFileName', getCaption);
-router.get('/thumbnail/:thumbnailFileName', getThumbnail);
 
 router.use(protect);
 router.post('/', videoUploader.single('video'), createVideo);
