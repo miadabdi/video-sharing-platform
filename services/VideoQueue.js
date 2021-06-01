@@ -41,11 +41,13 @@ function transcodeVideo(job) {
 
     return new Promise((resolve, reject) => {
 
+        // options for spawn
         const options = [
             `-loglevel error`,
             `-y`,
             `-i '../${videoFilename}'`,
             `-filter_complex "[0:v]fps=fps=30,split=3[v1][v2][v3];[v1]scale=width=-2:height=1080[1080p];[v2]scale=width=-2:height=720[720p];[v3]scale=width=-2:height=360[360p]"`,
+            `-codec:v libx264`,
             `-crf:v 23`,
             `-profile:v high`,
             `-pix_fmt:v`, `yuv420p`,
@@ -65,6 +67,8 @@ function transcodeVideo(job) {
             `-maxrate:v:2 700000`,
             `-bufsize:v:2 2*500000`,
             `-level:v:2 3.1`,
+            `-codec:a aac`,
+            `-ac:a 2`,
             `-map 0:a:0`,
             `-b:a:0 192000`,
             `-map 0:a:0`,
@@ -81,6 +85,7 @@ function transcodeVideo(job) {
             `-hls_segment_filename 'segment_%v.ts' 'manifest_%v.m3u8'`
         ];
 
+        // creating spawn
         const command = spawn('ffmpeg', options, {
             shell: true,
             cwd: dedicatedDirPath
@@ -91,14 +96,13 @@ function transcodeVideo(job) {
             // console.log(`stdout: ${data}`);
         });
 
-        command.stderr.on('data', (data) => {
-            // console.error(`stderr: ${data}`);
-            reject(new Error(data));
-        });
-
         command.on('close', (code) => {
             // console.log(`child process closed with code ${code}`);
             resolve();
+        });
+
+        command.on('error', (err) => {
+            reject(err);
         });
 
     });
@@ -132,49 +136,3 @@ videoQueue.on('completed', async function(job, result) {
 });
 
 module.exports = videoQueue;
-
-
-
-/*
-
-ffmpeg -i ../20210326_125609.mp4 \
--filter_complex \
-"[0:v]fps=fps=30,split=3[v1][v2][v3]; \
-[v1]scale=width=-2:height=1080[1080p]; [v2]scale=width=-2:height=720[720p]; [v3]scale=width=-2:height=360[360p]" \
--codec:v libx264 -crf:v 23 -profile:v high -pix_fmt:v yuv420p -rc-lookahead:v 60 -force_key_frames:v expr:'gte(t,n_forced*2.000)' -preset:v "medium" -b-pyramid:v "strict"  \
--map [1080p] -maxrate:v:0 2000000 -bufsize:v:0 2*2000000 -level:v:0 4.0 \
--map [720p] -maxrate:v:1 1200000 -bufsize:v:1 2*1000000 -level:v:1 3.1 \
--map [360p] -maxrate:v:2 700000 -bufsize:v:2 2*500000 -level:v:2 3.1 \
--codec:a libfdk_aac -ac:a 2 \
--map 0:a:0 -b:a:0 192000 \
--map 0:a:0 -b:a:1 128000 \
--map 0:a:0 -b:a:2 96000 \
--f hls \
--hls_flags +independent_segments+program_date_time+single_file \
--hls_time 6 \
--hls_playlist_type vod \
--hls_segment_type mpegts \
--master_pl_name 'master.m3u8' \
--var_stream_map \'v:0,a:0,name:1080p v:1,a:1,name:720p v:2,a:2,name:360p\' \
--hls_segment_filename 'segment_%v_%05d.ts' 'manifest_%v.m3u8'
-
-
-
-
-ffmpeg -i segment_360p.ts -i ../sub1.srt \
--c:v copy \
--c:s webvtt \
--map 0:v \
--map 1:s \
--shortest \
--f hls \
--hls_flags +independent_segments+program_date_time+single_file \
--hls_time 6 \
--hls_playlist_type vod \
--hls_subtitle_path sub_eng.m3u8 \
--hls_segment_type mpegts \
--var_stream_map 'v:0,s:0,name:Spanish,sgroup:subtitle' \
--hls_segment_filename 'redundant_%v.ts' sub_%v.m3u8
-
-*/
-
