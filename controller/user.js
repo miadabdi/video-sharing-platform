@@ -16,6 +16,8 @@ exports.removeDislikeVideo = CatchAsync(async (req, res, next) => {
     const videoId = req.params.videoId;
 
     const index = req.user.dislikedVideos.indexOf(videoId);
+
+    // if the video is in the dislikedVideos array we remove it
     if (index > -1) {
         req.user.dislikedVideos.splice(index, 1);
         await req.user.save();
@@ -38,6 +40,8 @@ exports.removeLikedVideo = CatchAsync(async (req, res, next) => {
     const videoId = req.params.videoId;
 
     const index = req.user.likedVideos.indexOf(videoId);
+
+    // if the video is in the likedVideos array we remove it
     if (index > -1) {
         req.user.likedVideos.splice(index, 1);
         await req.user.save();
@@ -66,6 +70,7 @@ exports.dislikeVideo = CatchAsync(async (req, res, next) => {
     }
 
     const indexDislike = req.user.dislikedVideos.indexOf(videoId);
+    // if the video is in the dislikedVideos array, we can't add it
     if (indexDislike === -1) {
         req.user.dislikedVideos.push(videoId);
         await req.user.save();
@@ -93,6 +98,7 @@ exports.likeVideo = CatchAsync(async (req, res, next) => {
     }
 
     const indexLike = req.user.likedVideos.indexOf(videoId);
+    // if the video is in the likedVideos array, we can't add it
     if (indexLike === -1) {
         req.user.likedVideos.push(videoId);
         await req.user.save();
@@ -115,6 +121,7 @@ exports.addToWatched = CatchAsync(async (req, res, next) => {
     const videoId = req.params.videoId;
 
     const index = req.user.watched.indexOf(videoId);
+    // if the video is in the watched array, we can't add it
     if (index === -1) {
         req.user.watched.push(videoId);
         await req.user.save();

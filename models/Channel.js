@@ -42,12 +42,15 @@ const ChannelSchema = new mongoose.Schema({
 ChannelSchema.pre('save' , function(next) {
     if(!this.isModified('subscribers')) return next();
 
+    // whenever subscribers array is modified, we update the numberOfSubscribers
+
     this.numberOfSubscribers = this.subscribers.length;
 
     next();
 });
 
 ChannelSchema.method('pushSubscriber', function(userId) {
+    // whenever someone subscribes, we add the id of the user to this array
     const index = this.subscribers.indexOf(userId); 
     if (index === -1) {
         this.subscribers.push(userId);
@@ -56,6 +59,7 @@ ChannelSchema.method('pushSubscriber', function(userId) {
 
 
 ChannelSchema.method('removeSubscriber', function(userId) {
+    // whenever someone unsubscribes, we remove the id of the user to this array
     const index = this.subscribers.indexOf(userId); 
     if (index > -1) {
         this.subscribers.splice(index, 1);

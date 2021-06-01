@@ -18,6 +18,7 @@ exports.createReply = CatchAsync(async (req, res, next) => {
         }
     });
 
+    // create method won't push it automatically, we have to do it
     parentDoc.replies.push(reply);
     await parentDoc.save();
 
@@ -79,6 +80,7 @@ exports.updateReply = CatchAsync(async (req, res, next) => {
         return next(new AppError('Comment not found', 404));
     }
 
+    // getting the reply
     const reply = comment.replies.id(req.params.replyId);
 
     if (!reply) {

@@ -1,3 +1,7 @@
+// Caching is not used yet
+// and this file is not even referenced
+
+
 const mongoose = require("mongoose");
 const redis = require("redis");
 const { promisify } = require('util');

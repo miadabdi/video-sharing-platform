@@ -1,4 +1,4 @@
-// uncaughtException should be defined at the very beginning of the proccess
+// uncaughtException should be defined at the very beginning of the process
 process.on("uncaughtException", (err) => {
     console.log(err.name, err.message);
     console.log("UNHANDLED EXECPTION, SHUTTING DOWN...");
@@ -45,6 +45,7 @@ process.on("unhandledRejection", (err) => {
 });
 
 process.on("SIGTERM", (err) => {
+    console.log(err);
     console.log("SIGTERM EVENT, SHUTTING DOWN...");
     server.close(() => {});
 });

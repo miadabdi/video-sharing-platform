@@ -22,6 +22,7 @@ const captionSchema = new mongoose.Schema({
     }
 });
 
+// to get language name equivalent of the language code in RFC5646
 captionSchema.virtual('language').get(function() {
     return RFC5646_LANGUAGE_TAGS[this.languageInRFC5646];
 })
@@ -101,6 +102,7 @@ const VideoSchema = new mongoose.Schema({
 VideoSchema.pre('save' , function(next) {
     if(!this.isModified('likes')) return next();
 
+    // whenever likes array is modified, we update numberOfLikes
     this.numberOfLikes = this.likes.length;
 
     next();
@@ -109,6 +111,7 @@ VideoSchema.pre('save' , function(next) {
 VideoSchema.pre('save' , function(next) {
     if(!this.isModified('dislikes')) return next();
 
+    // whenever dislikes array is modified, we update numberOfDislikes
     this.numberOfDislikes = this.dislikes.length;
 
     next();
@@ -143,7 +146,6 @@ VideoSchema.method('addToDislikes', function(userId) {
 })
 
 VideoSchema.method('unlinkThumbnail', async function() { 
-    // deleting original video
 
     const path = Path.join(__dirname, `../storage/thumbnails/${this.thumbnail}`);
     // FIXME: exists should not be used
@@ -176,9 +178,8 @@ VideoSchema.method('unlinkVideos', async function() {
     
 })
 
+// TODO: maybe give the user ability to create playlists
 
 const Video = mongoose.model('Video', VideoSchema);
 
 module.exports = Video;
-
-

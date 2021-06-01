@@ -11,6 +11,7 @@ const redirectSetToken = (res, user) => {
     res.status(302).redirect("/");
 }
 
+// client id and secret and callback is relevent to developer and the google account used
 const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_OAUTH_CLIENT_ID,
     process.env.GOOGLE_OAUTH_CLIENT_SECRET,
@@ -20,8 +21,13 @@ const oauth2Client = new google.auth.OAuth2(
 
 const handleUserLogin = async (data, tokens, serviceProvider) => {
     let user;
+
+    // we check if the logged in user (using oauth), does have account
     user = await UserModel.findOne({email: data.email});
-    if(!user) {
+
+    if (!user) {
+        // this is the first time user logs in with oauth and this account, so we create an account for them
+
         // we download the avatar at this point, because if the user signed up before
         // the user probably has an avatar picture
         if(data.avatar) {
@@ -44,7 +50,10 @@ const handleUserLogin = async (data, tokens, serviceProvider) => {
         };
 
         user = await UserModel.create(userData);
-    } else {
+    } 
+    
+    // if there is account created for user before, we update the tokens
+    else {
         user[serviceProvider] = {
             id: data.id,
             tokens
@@ -60,6 +69,8 @@ const handleUserLogin = async (data, tokens, serviceProvider) => {
 
 exports.googleOauthCallback = CatchAsync(async(req, res, next) => {
     const authCode = req.query.code;
+
+    // with auth code we can retrieve tokens
     const {tokens} = await oauth2Client.getToken(authCode);
 
     const userinfo = await google.oauth2("v2").userinfo.get({
@@ -83,6 +94,7 @@ exports.googleOauth = CatchAsync(async(req, res, next) => {
         "openid"
     ];
 
+    // creating a route for the user to perform oauth
     const url = oauth2Client.generateAuthUrl({
         // 'online' (default) or 'offline' (gets refresh_token)
         access_type: 'offline',
@@ -95,12 +107,14 @@ exports.googleOauth = CatchAsync(async(req, res, next) => {
 });
 
 exports.githubOauth = CatchAsync(async(req, res, next) => {
+    // creating a route for the user to perform oauth
     const redirectUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_OAUTH_CLIENT_ID}&scope=read:user,user:email`;
 
     res.status(302).redirect(redirectUrl);
 });
 
 exports.githubOauthCallback = CatchAsync(async(req, res, next) => {
+    // using the returned code and our application dredintials to github, we create the body
     body = {
         client_id: process.env.GITHUB_OAUTH_CLIENT_ID,
         client_secret: process.env.GITHUB_OAUTH_CLIENT_SECRET,

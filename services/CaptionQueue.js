@@ -28,7 +28,7 @@ Ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
 Ffmpeg.setFfprobePath(process.env.FFPROBE_PATH);
 
 
-
+// TODO: it is probably better to import these folder addresses from globals
 const videoFolder = Path.join(__dirname, '../storage/videos');
 const captionFolder = Path.join(__dirname, '../storage/captions');
 
@@ -42,14 +42,19 @@ function transcodeSubtitle(job) {
     // any change to this or the ffmpeg commands may result in errors 
     const video1080 = `segment_1080p.ts`;
 
+    // sub_code is the code and sub_name is the name of the language in RFC5646 
     const sub_code = job.data.sub_code;
     const sub_name = job.data.sub_name;
 
+    // name is slugified because it is used for the name of the vtt file
+    // and the captionM3u8Filename is used for the m3u8 file
+    // so these will be file name and it is better not to have spaces in them
     const sub_name_slugified = slugify(sub_name, { remove: /(\(|\))/g });
     const captionM3u8Filename = `sub_${sub_name_slugified}.m3u8`;
 
     return new Promise((resolve, reject) => {
 
+        // options of the spawn
         const options = [
             `-loglevel error`,
             `-y`,
@@ -71,6 +76,7 @@ function transcodeSubtitle(job) {
             `-hls_segment_filename 'redundant_%v.ts' 'sub_%v.m3u8'`
         ];
 
+        // creating the spawn
         const command = spawn('ffmpeg', options, {
             shell: true,
             cwd: dedicatedDirPath
@@ -94,7 +100,7 @@ function transcodeSubtitle(job) {
         });
 
         command.on('error', (err) => {
-            console.error(err);
+            // console.error(err);
             reject(err);
         })
 
@@ -112,6 +118,8 @@ captionQueue.on('waiting', async function(jobId){
 });
 
 captionQueue.on('failed', async function(job, err) {
+    // TODO: when the job failes we move on and even don't have any functionality to retry
+    // we don't even have the functionality to inform the user
     job.remove();
 });
 
@@ -120,54 +128,10 @@ captionQueue.on('progress', function(job, progress) {
 });
 
 captionQueue.on('completed', async function(job, result) {
+    // when the job completes, the required information is sent to func below
+    // to do essential things afterwards
     await captionTranscodingCompleted(job.id, result);
     job.remove();
 });
 
 module.exports = captionQueue;
-
-
-
-/*
-
-ffmpeg -i ../20210326_125609.mp4 \
--filter_complex \
-"[0:v]fps=fps=30,split=3[v1][v2][v3]; \
-[v1]scale=width=-2:height=1080[1080p]; [v2]scale=width=-2:height=720[720p]; [v3]scale=width=-2:height=360[360p]" \
--codec:v libx264 -crf:v 23 -profile:v high -pix_fmt:v yuv420p -rc-lookahead:v 60 -force_key_frames:v expr:'gte(t,n_forced*2.000)' -preset:v "medium" -b-pyramid:v "strict"  \
--map [1080p] -maxrate:v:0 2000000 -bufsize:v:0 2*2000000 -level:v:0 4.0 \
--map [720p] -maxrate:v:1 1200000 -bufsize:v:1 2*1000000 -level:v:1 3.1 \
--map [360p] -maxrate:v:2 700000 -bufsize:v:2 2*500000 -level:v:2 3.1 \
--codec:a libfdk_aac -ac:a 2 \
--map 0:a:0 -b:a:0 192000 \
--map 0:a:0 -b:a:1 128000 \
--map 0:a:0 -b:a:2 96000 \
--f hls \
--hls_flags +independent_segments+program_date_time+single_file \
--hls_time 6 \
--hls_playlist_type vod \
--hls_segment_type mpegts \
--master_pl_name 'master.m3u8' \
--var_stream_map \'v:0,a:0,name:1080p v:1,a:1,name:720p v:2,a:2,name:360p\' \
--hls_segment_filename 'segment_%v_%05d.ts' 'manifest_%v.m3u8'
-
-
-
-
-ffmpeg -i segment_360p.ts -i ../sub1.srt \
--c:v copy \
--c:s webvtt \
--map 0:v \
--map 1:s \
--shortest \
--f hls \
--hls_flags +independent_segments+program_date_time+single_file \
--hls_time 6 \
--hls_playlist_type vod \
--hls_subtitle_path sub_eng.m3u8 \
--hls_segment_type mpegts \
--var_stream_map 'v:0,s:0,name:Spanish,sgroup:subtitle' \
--hls_segment_filename 'redundant_%v.ts' sub_%v.m3u8
-
-*/
-

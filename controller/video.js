@@ -18,6 +18,8 @@ const m3u8Parser = require('@michaeljones2001/m3u8-parser');
 
 
 const mkdirPromise = promisify(mkdir);
+
+// TODO: add to globals
 const videoFolder = Path.join(__dirname, '../storage/videos');
 
 const getVideoDetailsInDesiredFormat = async (videoFilePath) => {
@@ -37,7 +39,10 @@ const getVideoDetailsInDesiredFormat = async (videoFilePath) => {
     }
 }
 
-const ownsVideo = async (user, videoId, video) => {
+const ownsVideo = async (user, videoId = undefined, video) => {
+    // if videoId is passed, we fetch the video document
+    // if the actual document is passed, we don't
+    // just reducing the calls to database
     if (videoId) {
         video = await Video.findById(videoId);
     }
@@ -56,6 +61,7 @@ exports.getVideo = CatchAsync(async (req, res, next) => {
 
     if (!video.isPublished && !(await ownsChannel(req.user, video.creator))) {
         return next(new AppError('Video is not published yet', 403));
+        // if you own the channel, you can see not published videos
     }
 
     res.status(200).json({
@@ -66,20 +72,6 @@ exports.getVideo = CatchAsync(async (req, res, next) => {
     })
 })
 
-// exports.getMasterFile = CatchAsync(async (req, res, next) => {
-//     const video = await Video.findById(videoId);
-
-//     if (!video || video.isDeleted) {
-//         return next(new AppError('Video not found', 404));
-//     }
-
-//     if (!video.isPublished) {
-//         return next(new AppError('Video is not published yet', 403));
-//     }
-
-//     const masterPath = Path.join(__dirname, `../storage/videos/${video.dedicatedDir}/master.m3u8`);
-//     res.sendFile(masterPath);
-// });
 
 exports.setThumbnail = CatchAsync(async (req, res, next) => {
     if (!req.file) {
@@ -123,6 +115,7 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
         return next(new AppError('You don\'n own this channel', 403));
     }
 
+    // FIXME: when video has got only one stream (audio is probably not there), we return an error. we should delete uploaded files
     const videoDetails = await getVideoDetailsInDesiredFormat(req.file.path);
     req.body.duration = videoDetails.duration;
     req.body.orgVideoFilename = req.file.filename;
@@ -233,6 +226,7 @@ exports.startTranscoding = CatchAsync(async (req, res, next) => {
     }
 
     // importing video queue here for avoiding cycling dependency
+    // TODO: temparary should not be in this way
     const VideoQueue = require('../services/VideoQueue');
 
     VideoQueue.add(
@@ -303,6 +297,7 @@ exports.setVideoToWaiting = (videoId) => {
 exports.videoTranscodingCompleted = async (videoId, result) => {
     const video = await Video.findById(videoId);
 
+    // TODO: why are we unlinking thumbnail?
     await video.unlinkThumbnail();
     await video.unlinkOrgVideo();
 
@@ -371,6 +366,8 @@ exports.addCaption = CatchAsync(async (req, res, next) => {
         return next(new AppError('You don\'n own this video', 403));
     }
 
+    // FIXME: captions should only be added when video is processed
+
     const caption = video.captions.create({
         filename: req.file.filename,
         languageInRFC5646: req.body.languageInRFC5646
@@ -381,6 +378,7 @@ exports.addCaption = CatchAsync(async (req, res, next) => {
     await video.save();
     
     // importing caption queue here for avoiding cycling dependency
+    // TODO: temparary should not be in this way
     const CaptionQueue = require('../services/CaptionQueue');
 
     CaptionQueue.add(
@@ -388,7 +386,7 @@ exports.addCaption = CatchAsync(async (req, res, next) => {
             subtitleFilename: caption.filename,
             dedicatedDir: video.dedicatedDir,
             sub_code: caption.languageInRFC5646,
-            sub_name: RFC5646_LANGUAGE_TAGS[caption.languageInRFC5646]
+            sub_name: RFC5646_LANGUAGE_TAGS[caption.languageInRFC5646] // FIXME: we can use language virtual in schema of captions
         },
         {
             jobId: video._id
@@ -426,9 +424,11 @@ exports.captionTranscodingCompleted = async (jobId, result) => {
             uri: result.captionM3u8Filename
         };
 
+        // there will be only one subtitle group and it is called 'subtitles0'
         parser.manifest.mediaGroups.SUBTITLES.subtitles0 = subtitles0;
 
         parser.manifest.playlists = parser.manifest.playlists.map((playlist) => {
+            // adding subtitle group to every variant in the master file
             playlist.attributes.SUBTITLES = "subtitles0";
             return playlist;
         })
@@ -450,18 +450,5 @@ exports.captionTranscodingCompleted = async (jobId, result) => {
         .map(async (f) => { await fs.promises.unlink(Path.join(path, f)) })
 }
 
-
-// exports.getThumbnail = CatchAsync(async (req, res, next) => {
-//     res.sendFile(req.params.thumbnailFileName, {
-//         root: Path.join(__dirname, '../storage/thumbnails'),
-//         acceptRanges: true,
-//         dotfiles: "deny",
-//         lastModified: false,
-//     }, function(err) {
-//         if (err) {
-//             next(err);
-//         }
-//     });
-// });
 
 // TODO: search functionality

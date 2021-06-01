@@ -3,7 +3,11 @@ const Channel = require('../models/Channel');
 const filterObject = require('../utilities/filterObject');
 const AppError = require('../utilities/AppError');
 
+// cheking if the passed user owns the channel
 const ownsChannel = async (user, channelId = undefined, channel) => {
+    // if channelId is passed, we fetch the channel document
+    // if the actual document is passed, we don't
+    // just reducing the calls to database
     if (channelId) {
         channel = await Channel.findById(channelId);
     }
@@ -14,6 +18,7 @@ const ownsChannel = async (user, channelId = undefined, channel) => {
 exports.ownsChannel = ownsChannel;
 
 exports.pushVideo = (channelId, videoId) => {
+    // pushing the newly uploaded video to videos array
     return Channel.findByIdAndUpdate(
         channelId, 
         { 
@@ -70,6 +75,7 @@ exports.updateChannel = CatchAsync(async (req, res, next) => {
 exports.getChannel = CatchAsync(async(req, res, next) => {
     const channelId = req.params.id;
 
+    // not retrieving subscribers cause that may get large
     const channel = await Channel.findById(channelId).select({ subscribers: 0, __v: 0 });
 
     res.status(200).json({
@@ -111,8 +117,11 @@ exports.deleteChannel = CatchAsync(async (req, res, next) => {
     }
 
     // requiring video controller here to avoid cyrcular import
+    // TODO: temparary should not be in this way
+    // FIXME: wait looks like this function is not present
     const { deleteManyVideos } = require('./video');
 
+    // deleting any video associated with this channel
     await deleteManyVideos(channel.videos);
 
     channel.isDeleted = true;
