@@ -12,6 +12,20 @@ const {
 } = require('./video');
 
 
+exports.pushChannel = (userId, channelId) => {
+    // pushing the newly uploaded video to videos array
+    return UserModel.findByIdAndUpdate(
+        userId, 
+        { 
+            $push: { channels: channelId } 
+        }, 
+        {
+            new: true,
+            runValidators: true
+        }
+    );
+};
+
 exports.removeDislikeVideo = CatchAsync(async (req, res, next) => {
     const videoId = req.params.videoId;
 
@@ -219,3 +233,12 @@ exports.updateInfo = CatchAsync(async(req, res, next) => {
         },
     });
 });
+
+exports.me = CatchAsync(async (req, res, next) => {
+    // removing unnecessary fields
+    req.user.password = undefined;
+    req.user.__v = undefined;
+    req.user.passwordChangedAt = undefined;
+
+    res.status(200).json(req.user);
+})

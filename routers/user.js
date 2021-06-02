@@ -8,7 +8,8 @@ const {
     dislikeVideo,
     removeDislikeVideo,
     removeLikedVideo,
-    addToWatched
+    addToWatched,
+    me
 } = require("../controller/user");
 
 const {
@@ -21,6 +22,7 @@ const { protect } = require("../controller/auth");
 const router = express.Router();
 
 router.use(protect);
+router.get('/me', me);
 router.patch("/update-me", avatarUploader.single('avatar'), avatarHandler, updateInfo);
 router.post('/subscribe/:channelId', subscribe);
 router.post('/unsubscribe/:channelId', unsubscribe);

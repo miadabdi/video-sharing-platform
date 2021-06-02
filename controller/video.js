@@ -245,17 +245,9 @@ exports.startTranscoding = CatchAsync(async (req, res, next) => {
     });
 })
 
-exports.deleteVideo = CatchAsync(async (req, res, next) => {
-    const videoId = req.params.id;
-
-    const video = await Video.findById(videoId);
-
+async function deleteOneVideo(video) {
     if (!video || video.isDeleted) {
-        return next(new AppError('Video not found', 404));
-    }
-
-    if (!(ownsVideo(req.user, undefined, video))) {
-        return next(new AppError('You don\'t own this video', 403));
+        throw new AppError('Video not found', 404);
     }
 
     await video.unlinkVideos();
@@ -263,6 +255,25 @@ exports.deleteVideo = CatchAsync(async (req, res, next) => {
     video.status = 'Deleted';
     video.isPublished = false;
     await video.save();
+}
+
+exports.deleteManyVideos = async (videoIds) => {
+    const videos = await Video.find({ _id: { $in: videoIds } });
+
+    const videoPromises = videos.map((video) => deleteOneVideo(video));
+    return Promise.allSettled(videoPromises);
+}
+
+exports.deleteVideo = CatchAsync(async (req, res, next) => {
+    const videoId = req.params.id;
+
+    const video = await Video.findById(videoId);
+
+    if (!(ownsVideo(req.user, undefined, video))) {
+        return next(new AppError('You don\'t own this video', 403));
+    }
+
+    await deleteOneVideo(video);
 
     res.status(204).json({
         status: 'success',

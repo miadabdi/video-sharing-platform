@@ -40,6 +40,13 @@ exports.createChannel = CatchAsync(async (req, res, next) => {
         )
     );
 
+    // importing pushChannel here for avoiding cycling dependency
+    // TODO: temparary should not be in this way
+
+    const { pushChannel } = require('./user');
+
+    await pushChannel(req.user._id, channel._id);
+
     res.status(201).json({
         status: 'success',
         message: 'Channel created successfully',
@@ -118,7 +125,6 @@ exports.deleteChannel = CatchAsync(async (req, res, next) => {
 
     // requiring video controller here to avoid cyrcular import
     // TODO: temparary should not be in this way
-    // FIXME: wait looks like this function is not present
     const { deleteManyVideos } = require('./video');
 
     // deleting any video associated with this channel
