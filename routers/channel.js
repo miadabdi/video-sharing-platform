@@ -1,29 +1,23 @@
-const express = require('express');
+const express = require("express");
 
-const {
-    avatarUploader,
-    avatarHandler
-} = require('../services/uploaders');
+const { avatarUploader, avatarHandler } = require("../services/uploaders");
 
-
-const {
-    protect
-} = require('../controller/auth');
+const { protect } = require("../controller/auth");
 
 const router = express.Router();
 
-const { 
-    createChannel,
-    updateChannel,
-    getChannel,
-    deleteChannel
-} = require('../controller/channel');
+const {
+	createChannel,
+	updateChannel,
+	getChannel,
+	deleteChannel,
+} = require("../controller/channel");
 
-router.get('/:id', getChannel);
+router.get("/:id", getChannel);
 
 router.use(protect);
-router.delete('/:id', deleteChannel);
-router.patch('/:id', avatarUploader.single('avatar'), avatarHandler, updateChannel);
-router.post('/', avatarUploader.single('avatar'), avatarHandler, createChannel);
+router.delete("/:id", deleteChannel);
+router.patch("/:id", avatarUploader.single("avatar"), avatarHandler, updateChannel);
+router.post("/", avatarUploader.single("avatar"), avatarHandler, createChannel);
 
 module.exports = router;

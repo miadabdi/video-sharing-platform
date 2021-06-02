@@ -1,28 +1,18 @@
-const express = require('express');
+const express = require("express");
 
-const {
-    protect,
-    isLoggedIn
-} = require('../controller/auth');
+const { protect, isLoggedIn } = require("../controller/auth");
 
-const {
-    thumbnailUploader
-} = require('../services/uploaders');
+const { thumbnailUploader } = require("../services/uploaders");
 
-const {
-    publish,
-    publishDone,
-    createLive,
-    getLive
-} = require('../controller/live');
+const { publish, publishDone, createLive, getLive } = require("../controller/live");
 
 const router = express.Router();
 
-router.get('/:id', isLoggedIn, getLive);
-router.post('/publish', publish);
-router.post('/publishDone', publishDone);
+router.get("/:id", isLoggedIn, getLive);
+router.post("/publish", publish);
+router.post("/publishDone", publishDone);
 
 router.use(protect);
-router.post('/', thumbnailUploader.single('thumbnail'), createLive);
+router.post("/", thumbnailUploader.single("thumbnail"), createLive);
 
 module.exports = router;

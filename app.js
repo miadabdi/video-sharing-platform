@@ -25,13 +25,13 @@ const app = express();
 // app.set("views", path.join(__dirname, "views"));
 
 // serving fav icon
-app.use(favicon(path.resolve(__dirname, 'public', 'favicon.ico')));
+app.use(favicon(path.resolve(__dirname, "public", "favicon.ico")));
 
 // serving the public folder
 app.use(express.static(path.join(__dirname, "public")));
 
 if (process.env.NODE_ENV === "development") {
-    app.use(morgan("dev"));
+	app.use(morgan("dev"));
 }
 
 // setting security HTTP headers
@@ -40,32 +40,32 @@ app.use(helmet());
 // Limiting number of requests to prevent
 // DOS and brute force attacks
 const limiter = rateLimiter({
-    max: process.env.GENERAL_RATE_LIMITER_MAX,
-    windowMs: process.env.GENERAL_RATE_LIMITER_TIME * 60 * 1000,
-    message: `Too many requests from this IP. Please try again in ${process.env.GENERAL_RATE_LIMITER_TIME} minutes`,
+	max: process.env.GENERAL_RATE_LIMITER_MAX,
+	windowMs: process.env.GENERAL_RATE_LIMITER_TIME * 60 * 1000,
+	message: `Too many requests from this IP. Please try again in ${process.env.GENERAL_RATE_LIMITER_TIME} minutes`,
 });
 app.use("/api", limiter);
 
 const limiterAuth = rateLimiter({
-    max: process.env.AUTH_RATE_LIMITER_MAX,
-    windowMs: process.env.AUTH_RATE_LIMITER_TIME * 60 * 1000,
-    message: `Too many requests from this IP for authentication. Please try again in ${process.env.AUTH_RATE_LIMITER_TIME} minutes`,
+	max: process.env.AUTH_RATE_LIMITER_MAX,
+	windowMs: process.env.AUTH_RATE_LIMITER_TIME * 60 * 1000,
+	message: `Too many requests from this IP for authentication. Please try again in ${process.env.AUTH_RATE_LIMITER_TIME} minutes`,
 });
 app.use("/api/auth", limiterAuth);
 
 // accepting req.body and limiting the incoming data by 100kb of size as json
 app.use(
-    express.json({
-        limit: "100kb",
-    })
+	express.json({
+		limit: "100kb",
+	})
 );
 
 // accepting req.body and limiting the incoming data by 100kb of size as array or strings
 app.use(
-    express.urlencoded({
-        limit: "100kb",
-        extended: true
-    })
+	express.urlencoded({
+		limit: "100kb",
+		extended: true,
+	})
 );
 
 // cors
@@ -93,12 +93,10 @@ app.use("/api/live", liveRoute);
 
 // Handling unhandled routes
 app.all("*", (req, res, next) => {
-    if (req.originalUrl.startsWith("/api")) {
-        return next(
-            new AppError(`can't find ${req.originalUrl} on this server!`, 404)
-        );
-    }
-    next(new AppError("Page not found! 404", 404));
+	if (req.originalUrl.startsWith("/api")) {
+		return next(new AppError(`can't find ${req.originalUrl} on this server!`, 404));
+	}
+	next(new AppError("Page not found! 404", 404));
 });
 
 // Global Error Handler
