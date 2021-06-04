@@ -6,12 +6,11 @@ const Path = require("path");
 const CatchAsync = require("../utilities/CatchAsync");
 const AppError = require("../utilities/AppError");
 const filterObject = require("../utilities/filterObject");
-const { ownsChannel, pushVideo } = require("./channel");
+const { ownsChannel, pushVideo, isChannelDeleted } = require("./channel");
 const Video = require("../models/Video");
 const getVideoDetails = require("../utilities/getVideoDetails");
 const generateThumbnail = require("../services/createThumbnail");
 const getFilenameAndExt = require("../utilities/splitFilenameAndExt");
-const { RFC5646_LANGUAGE_TAGS } = require("../globals");
 
 const getVideoDetailsInDesiredFormat = async (videoFilePath) => {
 	const details = await getVideoDetails(videoFilePath);
@@ -24,7 +23,8 @@ const getVideoDetailsInDesiredFormat = async (videoFilePath) => {
 		);
 	}
 
-	const frameRate = parseFloat(eval(details.streams[0].avg_frame_rate).toFixed(2));
+	const [num1, num2] = details.streams[0].avg_frame_rate.split("/");
+	const frameRate = parseFloat((num1 / num2).toFixed(2));
 
 	return {
 		fileSize: details.format.size,
@@ -105,6 +105,10 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
 
 	if (!(await ownsChannel(req.user, req.body.creator))) {
 		return next(new AppError("You don'n own this channel", 403));
+	}
+
+	if (await isChannelDeleted(req.body.creator)) {
+		return next(new AppError("This channel is deleted, no more videos can be uploaded", 400));
 	}
 
 	// FIXME: when video has got only one stream (audio is probably not there), we return an error. we should delete uploaded files
@@ -251,6 +255,7 @@ async function deleteOneVideo(video) {
 	}
 
 	await video.unlinkVideos();
+	await video.unlinkOrgVideo();
 	video.isDeleted = true;
 	video.status = "Deleted";
 	video.isPublished = false;
@@ -308,10 +313,7 @@ exports.setVideoToWaiting = (videoId) => {
 exports.videoTranscodingCompleted = async (videoId, result) => {
 	const video = await Video.findById(videoId);
 
-	// TODO: why are we unlinking thumbnail?
-	await video.unlinkThumbnail();
 	await video.unlinkOrgVideo();
-
 	video.status = "Ready to publish";
 
 	await video.save();
@@ -376,7 +378,9 @@ exports.addCaption = CatchAsync(async (req, res, next) => {
 		return next(new AppError("You don'n own this video", 403));
 	}
 
-	// FIXME: captions should only be added when video is processed
+	if (!["Ready to publish", "Published"].includes(video.status)) {
+		return next(new AppError("Video should be processed to be able to add caption"), 400);
+	}
 
 	const caption = video.captions.create({
 		filename: req.file.filename,
@@ -396,7 +400,7 @@ exports.addCaption = CatchAsync(async (req, res, next) => {
 			subtitleFilename: caption.filename,
 			dedicatedDir: video.dedicatedDir,
 			sub_code: caption.languageInRFC5646,
-			sub_name: RFC5646_LANGUAGE_TAGS[caption.languageInRFC5646], // FIXME: we can use language virtual in schema of captions
+			sub_name: caption.language,
 		},
 		{
 			jobId: video._id,

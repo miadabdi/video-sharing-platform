@@ -31,6 +31,11 @@ exports.pushVideo = (channelId, videoId) => {
 	);
 };
 
+exports.isChannelDeleted = async (channelId) => {
+	const channel = await Channel.findById(channelId);
+	return channel.isDeleted;
+};
+
 exports.createChannel = CatchAsync(async (req, res, next) => {
 	req.body.owner = req.user._id;
 
