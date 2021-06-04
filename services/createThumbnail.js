@@ -1,21 +1,12 @@
 const ffmpeg = require("fluent-ffmpeg");
-const Path = require("path");
 const { thumbnailFolder } = require("../globals");
-
-function getFilenameAndExt(path) {
-	const fullFilename = Path.basename(path);
-	const lastDotIndex = fullFilename.lastIndexOf(".");
-	const filename = fullFilename.substring(0, lastDotIndex);
-	const ext = fullFilename.substring(lastDotIndex + 1);
-	return [filename, ext];
-}
 
 // setting binaries
 ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
 ffmpeg.setFfprobePath(process.env.FFPROBE_PATH);
 
 module.exports = (videoFilePath, videoId) => {
-	const [filename] = getFilenameAndExt(videoFilePath);
+	const thumbnailFilename = `${videoId}-${Date.now()}-thumbnail.png`;
 
 	// it takes a screenshot in any given second and saves it as thumbnail
 	// 16:9 aspect ratio is maintained
@@ -25,13 +16,13 @@ module.exports = (videoFilePath, videoId) => {
 				// console.log("Spawned Ffmpeg with command: " + commandLine);
 			})
 			.on("end", function thumbnailDone() {
-				resolve({ filename: `${filename}-thumbnail.png` });
+				resolve({ filename: thumbnailFilename });
 			})
 			.on("error", function thumbnailError(err) {
 				reject(err);
 			})
 			.screenshot({
-				filename: `${videoId}-${Date.now()}-thumbnail.png`,
+				filename: thumbnailFilename,
 				folder: thumbnailFolder,
 				size: "640x360",
 				timestamps: [30], // takes 1 screenshot in second 30
