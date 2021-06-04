@@ -81,7 +81,7 @@ function transcodeVideo(job) {
 		];
 
 		// creating spawn
-		const command = spawn("ffmpeg", options, {
+		const command = spawn("nice -n 19 ffmpeg", options, {
 			shell: true,
 			cwd: dedicatedDirPath,
 		});

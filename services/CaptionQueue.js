@@ -66,7 +66,7 @@ function transcodeSubtitle(job) {
 		];
 
 		// creating the spawn
-		const command = spawn("ffmpeg", options, {
+		const command = spawn("nice -n 18 ffmpeg", options, {
 			shell: true,
 			cwd: dedicatedDirPath,
 		});
