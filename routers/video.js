@@ -15,8 +15,10 @@ const {
 	deleteVideo,
 	setThumbnail,
 	addCaption,
+	search,
 } = require("../controller/video");
 
+router.get("/search", search);
 router.get("/:id", isLoggedIn, getVideo);
 
 router.use(protect);

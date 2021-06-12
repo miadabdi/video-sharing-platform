@@ -11,6 +11,7 @@ const Video = require("../models/Video");
 const getVideoDetails = require("../utilities/getVideoDetails");
 const generateThumbnail = require("../services/createThumbnail");
 const getFilenameAndExt = require("../utilities/splitFilenameAndExt");
+const APIFeatures = require("../utilities/APIFeatures");
 
 const getVideoDetailsInDesiredFormat = async (videoFilePath) => {
 	const details = await getVideoDetails(videoFilePath);
@@ -465,5 +466,36 @@ exports.captionTranscodingCompleted = async (jobId, result) => {
 			await fs.promises.unlink(Path.join(path, f));
 		});
 };
+
+exports.search = CatchAsync(async (req, res, next) => {
+	const projection = {};
+	if (req.query.keywords) {
+		// performing text search on title and description fields if keywords is present
+		req.query.$text = { $search: req.query.keywords };
+		delete req.query.keywords;
+
+		// adding score to the result
+		projection.score = { $meta: "textScore" };
+
+		// FIXME: sorting the score normally won't have any effect
+		// maybe because it is probably a vitual property
+		// plus, the way to sort score that is shown is different
+		// https://docs.mongodb.com/manual/text-search
+		// req.query.sort = [req.query.sort, "score"].join("");
+	}
+
+	const query = new APIFeatures(Video, req.query, projection)
+		.filter()
+		.sort()
+		.paginate()
+		.excludeFields();
+
+	const videos = await query.query;
+
+	res.status(200).json({
+		noResult: videos.length,
+		videos,
+	});
+});
 
 // TODO: search functionality

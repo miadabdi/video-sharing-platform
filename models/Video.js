@@ -109,6 +109,8 @@ const VideoSchema = new mongoose.Schema(
 	}
 );
 
+VideoSchema.index({ title: "text", description: "text" });
+
 VideoSchema.pre("save", function preSaveNumberOfLikes(next) {
 	if (!this.isModified("likes")) return next();
 
