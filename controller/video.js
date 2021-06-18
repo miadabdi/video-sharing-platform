@@ -416,45 +416,45 @@ exports.addCaption = CatchAsync(async (req, res, next) => {
 
 exports.captionTranscodingCompleted = async (jobId, result) => {
 	// #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subtitles0",NAME="eng_subtitle",DEFAULT=NO,AUTOSELECT=YES,LANGUAGE="eng",URI="subtitle_eng_rendition.m3u8"
-	// FIXME: convert to async/await
 
-	fs.readFile(result.masterPath, "utf8", (err, data) => {
-		if (err) {
-			console.error(`Error in opening master file: ${err}`);
-			return err;
-		}
+	let masterData;
+	try {
+		masterData = await fs.promises.readFile(result.masterPath, { encoding: "utf8" });
+	} catch (err) {
+		console.error(`Error in opening master file: ${err}`);
+	}
 
-		// loading m3u8 master to parser
-		const parser = new m3u8Parser.Parser();
-		parser.push(data);
-		parser.end();
+	// loading m3u8 master to parser
+	const parser = new m3u8Parser.Parser();
+	parser.push(masterData);
+	parser.end();
 
-		// group name subtitle0 is hardcoded. changing this may cause errors
-		const subtitles0 = parser.manifest.mediaGroups.SUBTITLES.subtitles0 || {};
-		subtitles0[result.sub_name] = {
-			default: false,
-			autoselect: false,
-			forced: false,
-			language: result.sub_code,
-			uri: result.captionM3u8Filename,
-		};
+	// group name subtitle0 is hardcoded. changing this may cause errors
+	const subtitles0 = parser.manifest.mediaGroups.SUBTITLES.subtitles0 || {};
+	subtitles0[result.sub_name] = {
+		default: false,
+		autoselect: false,
+		forced: false,
+		language: result.sub_code,
+		uri: result.captionM3u8Filename,
+	};
 
-		// there will be only one subtitle group and it is called 'subtitles0'
-		parser.manifest.mediaGroups.SUBTITLES.subtitles0 = subtitles0;
+	// there will be only one subtitle group and it is called 'subtitles0'
+	parser.manifest.mediaGroups.SUBTITLES.subtitles0 = subtitles0;
 
-		parser.manifest.playlists = parser.manifest.playlists.map((playlist) => {
-			// adding subtitle group to every variant in the master file
-			playlist.attributes.SUBTITLES = "subtitles0";
-			return playlist;
-		});
-
-		fs.writeFile(result.masterPath, parser.stringify(), { encoding: "utf8" }, (errWriting) => {
-			if (err) {
-				console.error(`Error in writing master file: ${errWriting}`);
-				return err;
-			}
-		});
+	parser.manifest.playlists = parser.manifest.playlists.map((playlist) => {
+		// adding subtitle group to every variant in the master file
+		playlist.attributes.SUBTITLES = "subtitles0";
+		return playlist;
 	});
+
+	try {
+		await fs.promises.writeFile(result.masterPath, parser.stringify(), {
+			encoding: "utf8",
+		});
+	} catch (err) {
+		console.error(`Error in writing master file: ${err}`);
+	}
 
 	// removing redundant files
 	const path = result.dedicatedDirPath;
@@ -477,7 +477,7 @@ exports.search = CatchAsync(async (req, res, next) => {
 		// adding score to the result
 		projection.score = { $meta: "textScore" };
 
-		// FIXME: sorting the score normally won't have any effect
+		// FIXME: sorting the score normally won't have any effect on backend
 		// maybe because it is probably a vitual property
 		// plus, the way to sort score that is shown is different
 		// https://docs.mongodb.com/manual/text-search
@@ -497,5 +497,3 @@ exports.search = CatchAsync(async (req, res, next) => {
 		videos,
 	});
 });
-
-// TODO: search functionality
