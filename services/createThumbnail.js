@@ -5,7 +5,7 @@ const { thumbnailFolder } = require("../globals");
 ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
 ffmpeg.setFfprobePath(process.env.FFPROBE_PATH);
 
-module.exports = (videoFilePath, videoId) => {
+module.exports = (videoFilePath, videoId, thumbnailOffset) => {
 	const thumbnailFilename = `${videoId}-${Date.now()}-thumbnail.png`;
 
 	// it takes a screenshot in any given second and saves it as thumbnail
@@ -25,8 +25,8 @@ module.exports = (videoFilePath, videoId) => {
 				filename: thumbnailFilename,
 				folder: thumbnailFolder,
 				size: "640x360",
-				timestamps: [30], // takes 1 screenshot in second 30
-				// TODO: probably we can give the user the option to select a second
+				timestamps: [thumbnailOffset],
+				// takes 1 screenshot in second thumbnailOffset
 			});
 	});
 };

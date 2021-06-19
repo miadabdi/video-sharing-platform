@@ -102,6 +102,11 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
 		return next(new AppError("Video is not provided", 400));
 	}
 
+	let thumbnailOffset;
+	if (req.body.thumbnailOffset || !Number.isNaN(req.body.thumbnailOffset)) {
+		thumbnailOffset = Number(req.body.thumbnailOffset);
+	}
+
 	req.body = filterObject(req.body, "creator", "language", "title", "description");
 
 	if (!(await ownsChannel(req.user, req.body.creator))) {
@@ -116,6 +121,15 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
 	const videoDetails = await getVideoDetailsInDesiredFormat(req.file.path);
 	req.body.duration = videoDetails.duration;
 	req.body.orgVideoFilename = req.file.filename;
+
+	// check if the thumbnail offset is in boundaries
+	if (thumbnailOffset < 0) {
+		return next(new AppError("thumbnailOffset should not be lower than 0", 400));
+	}
+
+	if (thumbnailOffset > videoDetails.duration) {
+		return next(new AppError("thumbnailOffset should not be higher than video duration", 400));
+	}
 
 	// the slugified version of the video filename will be the folder name
 	req.body.dedicatedDir = slugify(getFilenameAndExt(req.file.filename)[0]);
@@ -132,7 +146,12 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
 	req.body.thumbnail = "fake"; // This is a fake thumbnail so mongoose won't throw error
 	const video = await Video.create(req.body);
 
-	const { filename: thumbnail } = await generateThumbnail(req.file.path, video._id);
+	const { filename: thumbnail } = await generateThumbnail(
+		req.file.path,
+		video._id,
+		thumbnailOffset || video.duration / 2
+		// if offset is not passed, screenshot will be taken from the middle of the video
+	);
 	video.thumbnail = thumbnail;
 	await video.save();
 
