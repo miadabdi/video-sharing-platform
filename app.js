@@ -17,6 +17,7 @@ const channelRoute = require("./routers/channel");
 const videoRoute = require("./routers/video");
 const commentRoute = require("./routers/comment");
 const liveRoute = require("./routers/live");
+const playlistRoute = require("./routers/playlist");
 
 const app = express();
 
@@ -90,6 +91,7 @@ app.use("/api/channel", channelRoute);
 app.use("/api/video", videoRoute);
 app.use("/api/comment", commentRoute);
 app.use("/api/live", liveRoute);
+app.use("/api/playlist", playlistRoute);
 
 // Handling unhandled routes
 app.all("*", (req, res, next) => {

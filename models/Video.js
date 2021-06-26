@@ -206,8 +206,6 @@ VideoSchema.method("unlinkVideos", async function unlinkVideos() {
 	}
 });
 
-// TODO: maybe give the user ability to create playlists
-
 const Video = mongoose.model("Video", VideoSchema);
 
 module.exports = Video;

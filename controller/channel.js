@@ -31,6 +31,20 @@ exports.pushVideo = (channelId, videoId) => {
 	);
 };
 
+exports.pushPlaylist = (channelId, playlistId) => {
+	// pushing the newly uploaded video to videos array
+	return Channel.findByIdAndUpdate(
+		channelId,
+		{
+			$push: { playlists: playlistId },
+		},
+		{
+			new: true,
+			runValidators: true,
+		}
+	);
+};
+
 exports.isChannelDeleted = async (channelId) => {
 	const channel = await Channel.findById(channelId);
 	return channel.isDeleted;

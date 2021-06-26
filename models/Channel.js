@@ -25,6 +25,12 @@ const ChannelSchema = new mongoose.Schema(
 				ref: "Video",
 			},
 		],
+		playlists: [
+			{
+				type: mongoose.SchemaTypes.ObjectId,
+				ref: "Playlist",
+			},
+		],
 		subscribers: [
 			{
 				type: mongoose.SchemaTypes.ObjectId,
