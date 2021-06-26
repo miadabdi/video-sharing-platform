@@ -15,6 +15,11 @@ captionQueue.clean(0, "active");
 captionQueue.clean(0, "completed");
 captionQueue.clean(0, "failed");
 
+// FIXME: we should not clear redis on restarts
+// There should be retrial for errors for some time
+// and if system restarts in the middle of a process
+// it should be retried
+
 const multi = captionQueue.multi();
 multi.del(captionQueue.toKey("repeat"));
 multi.exec();

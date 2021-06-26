@@ -13,6 +13,8 @@ const generateThumbnail = require("../services/createThumbnail");
 const getFilenameAndExt = require("../utilities/splitFilenameAndExt");
 const APIFeatures = require("../utilities/APIFeatures");
 
+const videoFolder = Path.join(__dirname, "../storage/videos");
+
 const getVideoDetailsInDesiredFormat = async (videoFilePath) => {
 	const details = await getVideoDetails(videoFilePath);
 
@@ -97,17 +99,34 @@ exports.setThumbnail = CatchAsync(async (req, res, next) => {
 	});
 });
 
-exports.createVideo = CatchAsync(async (req, res, next) => {
+exports.uploadVideo = CatchAsync(async (req, res, next) => {
 	if (!req.file) {
 		return next(new AppError("Video is not provided", 400));
 	}
 
+	res.status(201).json({
+		status: "success",
+		message: "Video uploaded successfully",
+		data: {
+			videoFilename: req.file.filename,
+		},
+	});
+});
+
+exports.createVideo = CatchAsync(async (req, res, next) => {
 	let thumbnailOffset;
 	if (req.body.thumbnailOffset || !Number.isNaN(req.body.thumbnailOffset)) {
 		thumbnailOffset = Number(req.body.thumbnailOffset);
 	}
 
-	req.body = filterObject(req.body, "creator", "language", "title", "description");
+	req.body = filterObject(
+		req.body,
+		"creator",
+		"language",
+		"title",
+		"description",
+		"videoFilename"
+	);
 
 	if (!(await ownsChannel(req.user, req.body.creator))) {
 		return next(new AppError("You don'n own this channel", 403));
@@ -118,9 +137,10 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
 	}
 
 	// FIXME: when video has got only one stream (audio is probably not there), we return an error. we should delete uploaded files
-	const videoDetails = await getVideoDetailsInDesiredFormat(req.file.path);
+	const videoPath = Path.join(videoFolder, req.body.videoFilename);
+	const videoDetails = await getVideoDetailsInDesiredFormat(videoPath);
 	req.body.duration = videoDetails.duration;
-	req.body.orgVideoFilename = req.file.filename;
+	req.body.orgVideoFilename = req.body.videoFilename;
 
 	// check if the thumbnail offset is in boundaries
 	if (thumbnailOffset < 0) {
@@ -132,7 +152,7 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
 	}
 
 	// the slugified version of the video filename will be the folder name
-	req.body.dedicatedDir = slugify(getFilenameAndExt(req.file.filename)[0]);
+	req.body.dedicatedDir = slugify(getFilenameAndExt(req.body.videoFilename)[0]);
 	const dedicatedDirPath = Path.join(__dirname, `../storage/videos/${req.body.dedicatedDir}`);
 	try {
 		await fs.promises.mkdir(dedicatedDirPath);
@@ -147,7 +167,7 @@ exports.createVideo = CatchAsync(async (req, res, next) => {
 	const video = await Video.create(req.body);
 
 	const { filename: thumbnail } = await generateThumbnail(
-		req.file.path,
+		videoPath,
 		video._id,
 		thumbnailOffset || video.duration / 2
 		// if offset is not passed, screenshot will be taken from the middle of the video

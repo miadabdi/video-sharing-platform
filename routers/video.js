@@ -16,13 +16,15 @@ const {
 	setThumbnail,
 	addCaption,
 	search,
+	uploadVideo,
 } = require("../controller/video");
 
 router.get("/search", search);
 router.get("/:id", isLoggedIn, getVideo);
 
 router.use(protect);
-router.post("/", videoUploader.single("video"), createVideo);
+router.post("/", createVideo);
+router.post("/uploadVideo", videoUploader.single("video"), uploadVideo);
 router.patch("/:id", updateVideo);
 router.post("/:id/startTranscoding", startTranscoding);
 router.post("/:id/publish", publish);

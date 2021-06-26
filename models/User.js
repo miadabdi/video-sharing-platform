@@ -160,5 +160,7 @@ UserSchema.methods.genResetToken = function genResetToken() {
 	return resetToken;
 };
 
+// TODO: How about push notification for channels?
+
 const User = mongoose.model("User", UserSchema);
 module.exports = User;

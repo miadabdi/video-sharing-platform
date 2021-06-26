@@ -18,6 +18,11 @@ videoQueue.clean(0, "active");
 videoQueue.clean(0, "completed");
 videoQueue.clean(0, "failed");
 
+// FIXME: we should not clear redis on restarts
+// There should be retrial for errors for some time
+// and if system restarts in the middle of a process
+// it should be retried
+
 const multi = videoQueue.multi();
 multi.del(videoQueue.toKey("repeat"));
 multi.exec();
@@ -79,6 +84,9 @@ function transcodeVideo(job) {
 			`"v:0,a:0,name:1080p v:1,a:1,name:720p v:2,a:2,name:360p"`,
 			`-hls_segment_filename 'segment_%v.ts' 'manifest_%v.m3u8'`,
 		];
+
+		// FIXME: make ffmpeg use less memory
+		// maybe streams will do the job
 
 		// creating spawn
 		const command = spawn("nice -n 19 ffmpeg", options, {
