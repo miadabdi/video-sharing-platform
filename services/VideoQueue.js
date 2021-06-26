@@ -89,7 +89,7 @@ function transcodeVideo(job) {
 		// maybe streams will do the job
 
 		// creating spawn
-		const command = spawn("nice -n 19 ffmpeg", options, {
+		const command = spawn(`nice -n ${process.env.VIDEO_NICENESS} ffmpeg`, options, {
 			shell: true,
 			cwd: dedicatedDirPath,
 		});

@@ -34,9 +34,9 @@ function transcodeSubtitle(job) {
 	const dedicatedDirPath = Path.join(videoFolder, dedicatedDir);
 	const subtitlePath = Path.join(captionFolder, subtitleFilename);
 
-	// variable video1080 is hardcoded.
+	// variable video360 is hardcoded.
 	// any change to this or the ffmpeg commands may result in errors
-	const video1080 = `segment_1080p.ts`;
+	const video360 = `segment_360p.ts`;
 
 	// sub_code is the code and sub_name is the name of the language in RFC5646
 	const { sub_code, sub_name } = job.data;
@@ -52,7 +52,7 @@ function transcodeSubtitle(job) {
 		const options = [
 			`-loglevel error`,
 			`-y`,
-			`-i '${video1080}'`,
+			`-i '${video360}'`,
 			`-i '${subtitlePath}'`,
 			`-c:v copy`,
 			`-c:a copy`,
@@ -71,7 +71,7 @@ function transcodeSubtitle(job) {
 		];
 
 		// creating the spawn
-		const command = spawn("nice -n 18 ffmpeg", options, {
+		const command = spawn(`nice -n ${process.env.CAPTION_NICENESS} ffmpeg`, options, {
 			shell: true,
 			cwd: dedicatedDirPath,
 		});
