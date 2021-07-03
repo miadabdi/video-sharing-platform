@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const multer = require("multer");
 const AppError = require("../utilities/AppError");
+const logger = require("../utilities/logger");
 
 const sendErrDev = (err, res, req) => {
 	// Sending error in development mode with the most information
@@ -37,8 +38,7 @@ const sendErrProd = (err, res, req) => {
 		});
 	} else {
 		// unknown or programming errors
-		// loging the error to console
-		console.error(`ERROR: ${err}`);
+		logger.error(err);
 
 		// Then sending back the response
 		if (req.originalUrl.startsWith("/api")) {

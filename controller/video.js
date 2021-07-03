@@ -12,6 +12,7 @@ const getVideoDetails = require("../utilities/getVideoDetails");
 const generateThumbnail = require("../services/createThumbnail");
 const getFilenameAndExt = require("../utilities/splitFilenameAndExt");
 const APIFeatures = require("../utilities/APIFeatures");
+const logger = require("../utilities/logger");
 
 const videoFolder = Path.join(__dirname, "../storage/videos");
 
@@ -460,7 +461,7 @@ exports.captionTranscodingCompleted = async (jobId, result) => {
 	try {
 		masterData = await fs.promises.readFile(result.masterPath, { encoding: "utf8" });
 	} catch (err) {
-		console.error(`Error in opening master file: ${err}`);
+		logger.error("Error in opening master file", err, { filePath: result.masterPath });
 	}
 
 	// loading m3u8 master to parser
@@ -492,7 +493,7 @@ exports.captionTranscodingCompleted = async (jobId, result) => {
 			encoding: "utf8",
 		});
 	} catch (err) {
-		console.error(`Error in writing master file: ${err}`);
+		logger.error("Error in writing master file", err, { filePath: result.masterPath });
 	}
 
 	// removing redundant files

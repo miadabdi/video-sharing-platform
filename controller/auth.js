@@ -224,6 +224,8 @@ exports.ResetPassword = CatchAsync(async (req, res, next) => {
 	user.passwordResetExpire = undefined;
 	await user.save();
 
+	// TODO: Providing a link to the end user instead of a token
+
 	// log the user in
 	exports.createSendToken(res, user, 200, "Password has been reseted successfully");
 });

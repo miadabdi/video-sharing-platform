@@ -1,18 +1,20 @@
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+
+dotenv.config({ path: "./config.env" });
+
+const logger = require("./utilities/logger");
+// require("./services/caching");
+
 // uncaughtException should be defined at the very beginning of the process
 process.on("uncaughtException", (err) => {
-	console.log(err.name, err.message);
-	console.log("UNHANDLED EXECPTION, SHUTTING DOWN...");
+	logger.error(err);
+	logger.info("UNHANDLED EXECPTION, SHUTTING DOWN...");
 
 	// always terminate process in uncaughtException.
 	// The state of program is not suitable to continue running.
 	process.exit(1);
 });
-
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-// require("./services/caching");
-
-dotenv.config({ path: "./config.env" });
 
 const app = require("./app");
 
@@ -25,27 +27,27 @@ mongoose
 		useFindAndModify: false,
 	})
 	.then(() => {
-		console.log("Connected to DB succesfully!");
+		logger.info("Connected to DB succesfully!");
 	})
 	.catch((err) => {
-		console.log(`Failed to connect to DB: ${err}`);
+		logger.error("Failed to connect to DB", err);
 	});
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-	console.log(`App started on port ${PORT}`);
+	logger.info(`App started on port ${PORT}`);
 });
 
 process.on("unhandledRejection", (err) => {
-	console.log(err.name, err.message);
-	console.log("UNHANDLED REJECTION, SHUTTING DOWN...");
+	logger.error(err);
+	logger.info("UNHANDLED REJECTION, SHUTTING DOWN...");
 	server.close(() => {
 		process.exit(1);
 	});
 });
 
 process.on("SIGTERM", (err) => {
-	console.log(err);
-	console.log("SIGTERM EVENT, SHUTTING DOWN...");
+	logger.error(err);
+	logger.info("SIGTERM EVENT, SHUTTING DOWN...");
 	server.close(() => {});
 });
