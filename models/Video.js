@@ -35,6 +35,7 @@ const VideoSchema = new mongoose.Schema(
 			minlength: 40,
 		},
 		visits: {
+			// FIXME: visits is redundant
 			type: Number,
 			default: 0,
 		},
