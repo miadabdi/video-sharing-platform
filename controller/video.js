@@ -1,4 +1,4 @@
-const m3u8Parser = require("@michaeljones2001/m3u8-parser");
+const m3u8Parser = require("@miadabdi/m3u8-parser");
 const slugify = require("slugify");
 const fs = require("fs");
 const sharp = require("sharp");

@@ -14,6 +14,7 @@ Use git to clone the project
 npm install
 npm start
 ```
+
 ## Details
 
 This project is capable of video sharing (video on-demand).
@@ -25,10 +26,11 @@ But only users can comment not channels.
 There is oAuth2.0 functionality and 2FA functionality for your emails.
 
 ### Commands
- 
+
 There are two commands of ffmpeg used in this project to achive hls packaging.
 The first one is a command that runs first and takes the video as input and outputs 3 variants of the video with associated m3u8 files and one final master m3u8.
 Each variant is in different quality and resolution to give the player of user adaptive bitrate streaming.
+
 ```bash
 ffmpeg -loglevel error -y -i ../input.mp4 \
 -filter_complex \
@@ -51,10 +53,12 @@ ffmpeg -loglevel error -y -i ../input.mp4 \
 -var_stream_map \'v:0,a:0,name:1080p v:1,a:1,name:720p v:2,a:2,name:360p\' \
 -hls_segment_filename 'segment_%v_%05d.ts' 'manifest_%v.m3u8'
 ```
+
 This command resizes the 1080p video that was uploaded to 1080p, 720p and 360p. For each variant a suitable (low size file with acceptable quality) bitrate is chosen. It is possible to change it, nothing will break. H.264 codec (libx264 encode) was chosen for video codec, in new versions of HLS you can use H.265 if you want. AAC codec was chosen for audio.
 And with help of `single_file` the segmentation is done through byterange instead of actual seperate segments.
 
 The second command is used after the first one whenever a new subtitle is uploaded.
+
 ```bash
 ffmpeg -loglevel error -y -i input.ts -i ../sub1.srt \
 -c:v copy \
@@ -71,15 +75,17 @@ ffmpeg -loglevel error -y -i input.ts -i ../sub1.srt \
 -var_stream_map 'v:0,s:0,name:Spanish,sgroup:subtitle' \
 -hls_segment_filename 'redundant_%v.ts' sub_%v.m3u8
 ```
-`sgroup` is a new feature impelemented in ffmpeg to integrate subtitles into hls packaging. but beacause this feature is new, it does not have good functionality, therefore we use this feature only to process and segment the subtitle and the associated m3u8 (in this process the video is used as heartbeat for segmentation, turns out without the heartbeat the segmentation won't be perfect ). But we add the tag for this subtitle to master file manully with this package: (m3u8-parser)[https://github.com/MichaelMikeJones/m3u8-parser] 
 
-One other downside to this approch is, using the video as heartbeat will produce redundant extra identical-to-input videos, which we do not need. All of names of these redundant videos start with `redundant` so it would be easy to delete them afterwards. 
+`sgroup` is a new feature impelemented in ffmpeg to integrate subtitles into hls packaging. but beacause this feature is new, it does not have good functionality, therefore we use this feature only to process and segment the subtitle and the associated m3u8 (in this process the video is used as heartbeat for segmentation, turns out without the heartbeat the segmentation won't be perfect ). But we add the tag for this subtitle to master file manully with this package: (m3u8-parser)[https://github.com/miadabdi/m3u8-parser]
 
+One other downside to this approch is, using the video as heartbeat will produce redundant extra identical-to-input videos, which we do not need. All of names of these redundant videos start with `redundant` so it would be easy to delete them afterwards.
 
 ## Contributing
+
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
 
 ## License
+
 [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html)

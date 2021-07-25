@@ -11,7 +11,7 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
-		"@michaeljones2001/m3u8-parser": "^5.4.1",
+		"@miadabdi/m3u8-parser": "^5.4.1",
 		"axios": "^0.21.1",
 		"bcryptjs": "^2.4.3",
 		"bull": "^3.21.1",
