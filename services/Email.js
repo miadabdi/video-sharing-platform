@@ -38,7 +38,7 @@ class Email {
 		// sending reset token
 		// const message = `Your reset token: ${token}\nClick the link to reset your password: ${req.protocol}://${req.headers.host}/reset/${token}`;
 		const message = `Your reset token: ${token}\nToken is valid for 10 minutes`;
-		await this.sendMail(message, "Youtube: Reset Token", email);
+		await this.sendMail(message, `Reset Token`, email);
 	}
 
 	async sendOneTimePass(oneTimePass, user) {
@@ -46,7 +46,7 @@ class Email {
 			user.fullname.split(" ")[0]
 		},\nAn attempt was made to login to your account, if you didn't make this attempt please ignore this message.\n Your one time passcode: ${oneTimePass}\n This passcode will expire in 10 minutes.`;
 
-		await this.sendMail(message, `Youtube: One time passcode`);
+		await this.sendMail(message, `One time passcode`);
 	}
 }
 
