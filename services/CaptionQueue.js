@@ -50,7 +50,7 @@ function transcodeSubtitle(job) {
 	return new Promise((resolve, reject) => {
 		// options of the spawn
 		const options = [
-			`-loglevel error`,
+			`-loglevel warning`,
 			`-y`,
 			`-i '${video360}'`,
 			`-i '${subtitlePath}'`,
@@ -82,6 +82,13 @@ function transcodeSubtitle(job) {
 
 		command.on("close", (code) => {
 			// console.log(`child process closed with code ${code}`);
+			if (code === 1) {
+				command.emit(
+					"error",
+					new Error("FFMPEG closed with code 1 during caption processing")
+				);
+				return;
+			}
 			resolve({
 				sub_code,
 				sub_name,
