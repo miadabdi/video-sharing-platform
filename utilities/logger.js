@@ -10,8 +10,7 @@ const logger = winston.createLogger({
 	format: combine(errors({ stack: true }), timestamp(), json()),
 	transports: [
 		new winston.transports.File({
-			filename: Path.join(logsPath, "info.log"),
-			// filename: "info.log",
+			filename: Path.join(logsPath, `info-${Date.now()}.log`),
 			level: "info",
 			maxsize: 20000, // in bytes: 20mb
 		}),
