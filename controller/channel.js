@@ -12,6 +12,10 @@ const ownsChannel = async (user, channelId = undefined, channel) => {
 		channel = await Channel.findById(channelId);
 	}
 
+	if (!channel) {
+		throw new AppError("Chennel does not exist.", 400);
+	}
+
 	return channel.owner.toString() === user._id.toString();
 };
 
