@@ -42,6 +42,10 @@ exports.updatePlaylist = CatchAsync(async (req, res, next) => {
 
 	const playlist = await Playlist.findById(playlistId);
 
+	if (!playlist) {
+		return next(new AppError("Playlist not found", 400));
+	}
+
 	if (!(await ownsPlaylist(req.user, undefined, playlist))) {
 		return next(new AppError("You don't own this playlist", 403));
 	}
