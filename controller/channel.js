@@ -82,6 +82,10 @@ exports.updateChannel = CatchAsync(async (req, res, next) => {
 
 	const channel = await Channel.findById(channelId);
 
+	if (!channel) {
+		return next(new AppError("Channel not found", 404));
+	}
+
 	if (!(await ownsChannel(req.user, undefined, channel))) {
 		return next(new AppError("Only channel owner can update the channel", 401));
 	}
@@ -107,6 +111,10 @@ exports.getChannel = CatchAsync(async (req, res, next) => {
 		subscribers: 0,
 		__v: 0,
 	});
+
+	if (!channel) {
+		return next(new AppError("Channel not found", 404));
+	}
 
 	res.status(200).json({
 		status: "success",
