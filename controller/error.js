@@ -55,7 +55,7 @@ const sendErrProd = (err, res, req) => {
 };
 
 const handleJWT = (err) => {
-	return new AppError("Please login again. Token is not valid", 400);
+	return new AppError("Please login again. Token is not valid", 401);
 };
 
 const handleDuplicateFields = (err) => {
