@@ -1,5 +1,8 @@
 # Video-Sharing-Platform
 
+@Deprecated
+This project is no longer maintained, An equivilant one is available, look into [streamy](https://github.com/miadabdi/streamy)/
+
 This is a minimalistic video sharing platform. Capable of sharing videos (video on-demand) and live streaming to mass audience if scaled well by the way.
 
 It has pretty basic features like users, channels, commenting, searching, uploading videos and processing them, creating playlists, going on a one way live and that's pretty much it.
